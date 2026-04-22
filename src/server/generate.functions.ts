@@ -13,8 +13,8 @@ async function getCodeIdFromToken(token: string): Promise<{ codeId: string } | n
     .maybeSingle();
   if (!data || data.revoked) return null;
   if (new Date(data.expires_at).getTime() < Date.now()) return null;
-  // @ts-expect-error joined
-  if (!data.access_codes?.is_active) return null;
+  const ac = (data as { access_codes: { is_active: boolean } | null }).access_codes;
+  if (!ac?.is_active) return null;
   return { codeId: data.code_id };
 }
 
