@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, ListChecks, BookOpen, History, ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 

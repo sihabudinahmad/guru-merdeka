@@ -8,7 +8,7 @@ import { getSession } from "@/lib/session";
 import { RenderedContent } from "@/components/generator-shared";
 import { buildDocxBlob, downloadBlob } from "@/lib/docx-export";
 
-export const Route = createFileRoute("/_app/riwayat/$id")({
+export const Route = createFileRoute("/app/riwayat/$id")({
   component: RiwayatDetail,
 });
 

@@ -4,7 +4,7 @@ import { Sparkles, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearSession, getSession, type LocalSession } from "@/lib/session";
 
-export const Route = createFileRoute("/_app")({
+export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 

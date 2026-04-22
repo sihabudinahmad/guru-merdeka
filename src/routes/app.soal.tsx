@@ -10,7 +10,7 @@ import {
 import { Loader2, Sparkles } from "lucide-react";
 import { ResultPanel, useGenerator } from "@/components/generator-shared";
 
-export const Route = createFileRoute("/_app/soal")({
+export const Route = createFileRoute("/app/soal")({
   component: SoalPage,
 });
 

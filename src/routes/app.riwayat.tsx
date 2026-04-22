@@ -4,7 +4,7 @@ import { listHistory } from "@/server/generate.functions";
 import { getSession } from "@/lib/session";
 import { FileText, ListChecks, BookOpen, Loader2, History as HistoryIcon, ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/_app/riwayat")({
+export const Route = createFileRoute("/app/riwayat")({
   component: RiwayatPage,
 });
 

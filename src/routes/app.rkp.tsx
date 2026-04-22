@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles } from "lucide-react";
 import { ResultPanel, useGenerator } from "@/components/generator-shared";
 
-export const Route = createFileRoute("/_app/rkp")({
+export const Route = createFileRoute("/app/rkp")({
   component: RkpPage,
 });
 
