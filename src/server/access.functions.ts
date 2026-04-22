@@ -92,8 +92,7 @@ export const verifySession = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!sess || sess.revoked) return { ok: false as const };
     if (new Date(sess.expires_at).getTime() < Date.now()) return { ok: false as const };
-    // @ts-expect-error joined
-    const ac = sess.access_codes;
+    const ac = sess.access_codes as unknown as { code: string; label: string | null; is_active: boolean } | null;
     if (!ac || !ac.is_active) return { ok: false as const };
     return {
       ok: true as const,
