@@ -14,16 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      access_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          label: string | null
+          max_devices: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          max_devices?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          max_devices?: number
+        }
+        Relationships: []
+      }
+      code_devices: {
+        Row: {
+          code_id: string
+          created_at: string
+          device_fingerprint: string
+          id: string
+          last_seen_at: string
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          device_fingerprint: string
+          id?: string
+          last_seen_at?: string
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          device_fingerprint?: string
+          id?: string
+          last_seen_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_devices_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      code_sessions: {
+        Row: {
+          code_id: string
+          created_at: string
+          device_fingerprint: string
+          expires_at: string
+          id: string
+          revoked: boolean
+          session_token: string
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          device_fingerprint: string
+          expires_at?: string
+          id?: string
+          revoked?: boolean
+          session_token: string
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          device_fingerprint?: string
+          expires_at?: string
+          id?: string
+          revoked?: boolean
+          session_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_sessions_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generations: {
+        Row: {
+          code_id: string
+          created_at: string
+          id: string
+          input_payload: Json
+          output_content: Json
+          title: string
+          type: string
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          id?: string
+          input_payload: Json
+          output_content: Json
+          title: string
+          type: string
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          id?: string
+          input_payload?: Json
+          output_content?: Json
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generations_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +314,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
