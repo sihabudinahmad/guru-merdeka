@@ -177,7 +177,7 @@ const RKP_SCHEMA = {
   },
 };
 
-function buildPrompt(type: "rpp" | "soal" | "rkp", payload: unknown): { system: string; user: string; tool: typeof RPP_SCHEMA } {
+function buildPrompt(type: "rpp" | "soal" | "rkp", payload: unknown): { system: string; user: string; tool: AITool } {
   if (type === "rpp") {
     const p = RppInput.parse(payload);
     return {
@@ -286,9 +286,9 @@ export const generateDocument = createServerFn({ method: "POST" })
     if (!toolCall?.function?.arguments) {
       return { ok: false as const, error: "AI tidak mengembalikan hasil terstruktur." };
     }
-    let parsed: unknown;
+    let parsed: Json;
     try {
-      parsed = JSON.parse(toolCall.function.arguments);
+      parsed = JSON.parse(toolCall.function.arguments) as Json;
     } catch {
       return { ok: false as const, error: "Gagal mengurai hasil AI." };
     }
@@ -296,13 +296,15 @@ export const generateDocument = createServerFn({ method: "POST" })
     const title = deriveTitle(data.type, data.payload);
     const { data: saved, error: saveErr } = await supabaseAdmin
       .from("generations")
-      .insert({
-        code_id: sess.codeId,
-        type: data.type,
-        title,
-        input_payload: data.payload as object,
-        output_content: parsed as object,
-      })
+      .insert([
+        {
+          code_id: sess.codeId,
+          type: data.type,
+          title,
+          input_payload: data.payload as Json,
+          output_content: parsed,
+        },
+      ])
       .select("id")
       .single();
     if (saveErr) {
