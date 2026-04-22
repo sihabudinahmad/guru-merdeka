@@ -7,6 +7,7 @@ import { getGeneration } from "@/server/generate.functions";
 import { getSession } from "@/lib/session";
 import { RenderedContent } from "@/components/generator-shared";
 import { buildDocxBlob, downloadBlob } from "@/lib/docx-export";
+import { buildPdfBlob } from "@/lib/pdf-export";
 
 export const Route = createFileRoute("/app/riwayat/$id")({
   component: RiwayatDetail,
@@ -17,6 +18,7 @@ function RiwayatDetail() {
   const navigate = useNavigate();
   const [item, setItem] = useState<{ id: string; type: "rpp" | "soal" | "rkp"; title: string; output_content: unknown; created_at: string } | null | undefined>(undefined);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     const s = getSession();
@@ -32,18 +34,33 @@ function RiwayatDetail() {
       .catch(() => setItem(null));
   }, [id, navigate]);
 
+  const safeName = (s: string) => s.replace(/[^\w\d-_. ]/g, "_").slice(0, 80);
+
   const handleDownload = async () => {
     if (!item) return;
     setDownloading(true);
     try {
       const blob = await buildDocxBlob(item.type, item.output_content);
-      const safe = item.title.replace(/[^\w\d-_. ]/g, "_").slice(0, 80);
-      downloadBlob(blob, `${safe}.docx`);
+      downloadBlob(blob, `${safeName(item.title)}.docx`);
     } catch (err) {
       console.error(err);
       toast.error("Gagal mengunduh.");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!item) return;
+    setDownloadingPdf(true);
+    try {
+      const blob = buildPdfBlob(item.type, item.output_content);
+      downloadBlob(blob, `${safeName(item.title)}.pdf`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal mengunduh PDF.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -71,10 +88,16 @@ function RiwayatDetail() {
         <Link to="/app/riwayat" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Riwayat
         </Link>
-        <Button onClick={handleDownload} disabled={downloading} size="sm">
-          {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Unduh .docx
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleDownload} disabled={downloading} size="sm" variant="outline">
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            .docx
+          </Button>
+          <Button onClick={handleDownloadPdf} disabled={downloadingPdf} size="sm">
+            {downloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            .pdf
+          </Button>
+        </div>
       </div>
       <header>
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.type}</p>

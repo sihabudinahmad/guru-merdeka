@@ -11,12 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppSoalRouteImport } from './routes/app.soal'
 import { Route as AppRppRouteImport } from './routes/app.rpp'
 import { Route as AppRkpRouteImport } from './routes/app.rkp'
 import { Route as AppRiwayatRouteImport } from './routes/app.riwayat'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminClaimRouteImport } from './routes/admin.claim'
 import { Route as AppRiwayatIdRouteImport } from './routes/app.riwayat.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +33,11 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -38,6 +47,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppSoalRoute = AppSoalRouteImport.update({
   id: '/soal',
@@ -59,6 +73,16 @@ const AppRiwayatRoute = AppRiwayatRouteImport.update({
   path: '/riwayat',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClaimRoute = AdminClaimRouteImport.update({
+  id: '/claim',
+  path: '/claim',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AppRiwayatIdRoute = AppRiwayatIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -67,34 +91,45 @@ const AppRiwayatIdRoute = AppRiwayatIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/claim': typeof AdminClaimRoute
+  '/admin/login': typeof AdminLoginRoute
   '/app/riwayat': typeof AppRiwayatRouteWithChildren
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/claim': typeof AdminClaimRoute
+  '/admin/login': typeof AdminLoginRoute
   '/app/riwayat': typeof AppRiwayatRouteWithChildren
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/claim': typeof AdminClaimRoute
+  '/admin/login': typeof AdminLoginRoute
   '/app/riwayat': typeof AppRiwayatRouteWithChildren
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
@@ -102,39 +137,51 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/app'
     | '/login'
+    | '/admin/claim'
+    | '/admin/login'
     | '/app/riwayat'
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/admin/claim'
+    | '/admin/login'
     | '/app/riwayat'
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin'
     | '/app'
     | '/app/riwayat/$id'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/app'
     | '/login'
+    | '/admin/claim'
+    | '/admin/login'
     | '/app/riwayat'
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
@@ -155,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -168,6 +222,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/app/soal': {
       id: '/app/soal'
@@ -197,6 +258,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRiwayatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/claim': {
+      id: '/admin/claim'
+      path: '/claim'
+      fullPath: '/admin/claim'
+      preLoaderRoute: typeof AdminClaimRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/app/riwayat/$id': {
       id: '/app/riwayat/$id'
       path: '/$id'
@@ -206,6 +281,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminClaimRoute: typeof AdminClaimRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminClaimRoute: AdminClaimRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRiwayatRouteChildren {
   AppRiwayatIdRoute: typeof AppRiwayatIdRoute
@@ -239,18 +328,10 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

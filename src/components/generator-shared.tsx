@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Download, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { buildDocxBlob, downloadBlob } from "@/lib/docx-export";
+import { buildPdfBlob } from "@/lib/pdf-export";
 import { generateDocument } from "@/server/generate.functions";
 import { getSession } from "@/lib/session";
 import { useNavigate } from "@tanstack/react-router";
@@ -22,6 +23,7 @@ export function ResultPanel({
 }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const pretty = useMemo(() => (content ? JSON.stringify(content, null, 2) : ""), [content]);
 
@@ -33,18 +35,33 @@ export function ResultPanel({
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const safeName = (s: string) => s.replace(/[^\w\d-_. ]/g, "_").slice(0, 80);
+
   const handleDownload = async () => {
     if (!content || !title) return;
     setDownloading(true);
     try {
       const blob = await buildDocxBlob(type, content);
-      const safe = title.replace(/[^\w\d-_. ]/g, "_").slice(0, 80);
-      downloadBlob(blob, `${safe}.docx`);
+      downloadBlob(blob, `${safeName(title)}.docx`);
     } catch (err) {
       console.error(err);
       toast.error("Gagal membuat file Word.");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!content || !title) return;
+    setDownloadingPdf(true);
+    try {
+      const blob = buildPdfBlob(type, content);
+      downloadBlob(blob, `${safeName(title)}.pdf`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal membuat file PDF.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -69,9 +86,13 @@ export function ResultPanel({
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             Salin JSON
           </Button>
-          <Button size="sm" onClick={handleDownload} disabled={downloading}>
+          <Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading}>
             {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Unduh .docx
+            .docx
+          </Button>
+          <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+            {downloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            .pdf
           </Button>
         </div>
       </div>
