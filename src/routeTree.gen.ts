@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppSoalRouteImport } from './routes/app.soal'
 import { Route as AppRppRouteImport } from './routes/app.rpp'
 import { Route as AppRkpRouteImport } from './routes/app.rkp'
@@ -46,6 +47,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppSoalRoute = AppSoalRouteImport.update({
   id: '/soal',
@@ -94,12 +100,12 @@ export interface FileRoutesByFullPath {
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/claim': typeof AdminClaimRoute
   '/admin/login': typeof AdminLoginRoute
@@ -107,6 +113,7 @@ export interface FileRoutesByTo {
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
@@ -122,6 +129,7 @@ export interface FileRoutesById {
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
 }
@@ -138,12 +146,12 @@ export interface FileRouteTypes {
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/login'
     | '/admin/claim'
     | '/admin/login'
@@ -151,6 +159,7 @@ export interface FileRouteTypes {
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin'
     | '/app'
     | '/app/riwayat/$id'
   id:
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
+    | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
   fileRoutesById: FileRoutesById
@@ -212,6 +222,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/app/soal': {
       id: '/app/soal'
@@ -268,11 +285,13 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminClaimRoute: typeof AdminClaimRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClaimRoute: AdminClaimRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
