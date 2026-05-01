@@ -5,7 +5,7 @@ type GenType = "rpp" | "soal" | "rkp";
 class PdfWriter {
   doc: jsPDF;
   y: number;
-  marginX = 56; // ~0.78 inch
+  marginX = 56;
   marginTop = 64;
   marginBottom = 64;
   pageW: number;
@@ -58,6 +58,14 @@ class PdfWriter {
     this.y += 14;
   }
 
+  h3italic(text: string) {
+    this.ensure(18);
+    this.doc.setFont("helvetica", "bolditalic");
+    this.doc.setFontSize(11);
+    this.doc.text(text, this.marginX + 12, this.y);
+    this.y += 14;
+  }
+
   p(text: string) {
     if (!text) return;
     this.doc.setFont("helvetica", "normal");
@@ -81,7 +89,7 @@ class PdfWriter {
     const lines = this.doc.splitTextToSize(text, w);
     lines.forEach((ln: string, i: number) => {
       this.ensure(14);
-      if (i === 0) this.doc.text("•", this.marginX, this.y);
+      if (i === 0) this.doc.text("\u2022", this.marginX, this.y);
       this.doc.text(ln, this.marginX + indent, this.y);
       this.y += 14;
     });
@@ -102,7 +110,6 @@ class PdfWriter {
     lines.forEach((ln: string, i: number) => {
       if (i > 0) {
         this.ensure(14);
-        this.y += 0;
       }
       this.doc.text(ln, this.marginX + keyW, this.y);
       this.y += 14;
@@ -116,42 +123,133 @@ class PdfWriter {
 }
 
 function rppPdf(c: any, w: PdfWriter) {
-  w.title("Rencana Pelaksanaan Pembelajaran (RPP)");
+  w.title("PERENCANAAN PELAKSANAAN PEMBELAJARAN");
+
+  // Identitas
   const id = c.identitas ?? {};
-  w.h2("Identitas");
+  if (id.namaPenyusun) w.kv("Nama Penyusun", id.namaPenyusun);
+  if (id.satuanPendidikan) w.kv("Satuan Pendidikan", id.satuanPendidikan);
   w.kv("Mata Pelajaran", id.mataPelajaran ?? "-");
-  w.kv("Kelas", `${id.kelas ?? "-"}${id.fase ? ` (Fase ${id.fase})` : ""}`);
-  w.kv("Alokasi Waktu", id.alokasiWaktu ?? "-");
-  w.kv("Materi Pokok", id.materiPokok ?? "-");
+  w.kv("Kelas/Semester", `${id.kelas ?? "-"}${id.semester ? ` / ${id.semester}` : ""}`);
+  if (id.fase) w.kv("Fase", id.fase);
+  w.kv("Durasi", id.durasi ?? id.alokasiWaktu ?? "-");
+  if (id.tahunPelajaran) w.kv("Tahun Pelajaran", id.tahunPelajaran);
 
-  w.h2("Tujuan Pembelajaran");
-  (c.tujuanPembelajaran ?? []).forEach((t: string) => w.bullet(t));
+  // Identifikasi
+  const idf = c.identifikasi;
+  if (idf) {
+    w.h2("Identifikasi — Kesiapan Peserta Didik");
+    w.kv("Karakteristik", idf.karakteristik ?? "-");
+    w.kv("Minat & Bakat", idf.minatBakat ?? "-");
+    w.kv("Latar Belakang", idf.latarBelakang ?? "-");
+    w.kv("Kebutuhan Belajar", idf.kebutuhanBelajar ?? "-");
+    w.kv("Materi Pelajaran", idf.materiPelajaran ?? "-");
+  }
 
-  if (c.profilPelajarPancasila?.length) {
+  // Dimensi Profil Lulusan
+  if (c.dimensiProfilLulusan?.length) {
+    w.h2("Dimensi Profil Lulusan");
+    c.dimensiProfilLulusan.forEach((d: string) => w.bullet(d));
+  }
+
+  // Desain Pembelajaran
+  const ds = c.desainPembelajaran;
+  if (ds) {
+    w.h2("Desain Pembelajaran");
+    w.kv("Capaian Pembelajaran", ds.capaianPembelajaran ?? "-");
+    if (ds.lintasDisiplinIlmu?.length) {
+      w.h3("Lintas Disiplin Ilmu");
+      ds.lintasDisiplinIlmu.forEach((t: string) => w.bullet(t));
+    }
+    w.h3("Tujuan Pembelajaran");
+    (ds.tujuanPembelajaran ?? []).forEach((t: string) => w.bullet(t));
+    w.h3("Praktik Pedagogis");
+    w.kv("Model", ds.praktikPedagogis?.model ?? "-");
+    w.kv("Metode", ds.praktikPedagogis?.metode ?? "-");
+    if (ds.kemitraan) w.kv("Kemitraan", ds.kemitraan);
+  }
+
+  // Lingkungan Pembelajaran
+  const lp = c.lingkunganPembelajaran;
+  if (lp) {
+    w.h2("Lingkungan Pembelajaran");
+    w.kv("Ruang Fisik", lp.ruangFisik ?? "-");
+    w.kv("Ruang Virtual", lp.ruangVirtual ?? "-");
+    w.kv("Budaya Belajar", lp.budayaBelajar ?? "-");
+  }
+
+  if (c.pemanfaatanDigital) {
+    w.h2("Pemanfaatan Digital");
+    w.p(c.pemanfaatanDigital);
+  }
+  if (c.saranaPrasarana?.length) {
+    w.h2("Sarana Prasarana");
+    c.saranaPrasarana.forEach((t: string) => w.bullet(t));
+  }
+  if (c.sumberBelajar?.length) {
+    w.h2("Sumber Belajar");
+    c.sumberBelajar.forEach((t: string) => w.bullet(t));
+  }
+
+  // Pengalaman Pembelajaran
+  const pp = c.pengalamanPembelajaran;
+  if (pp) {
+    w.h2("Pengalaman Pembelajaran");
+    w.h3(`Awal ${pp.awal?.durasi ? `(${pp.awal.durasi})` : ""}`);
+    (pp.awal?.kegiatan ?? []).forEach((t: string) => w.bullet(t));
+
+    w.h3(`Inti ${pp.inti?.durasi ? `(${pp.inti.durasi})` : ""}`);
+    if (pp.inti?.tahapan?.length) {
+      pp.inti.tahapan.forEach((t: any) => {
+        w.h3italic(`${t.nama}${t.label ? ` — ${t.label}` : ""}`);
+        (t.kegiatan ?? []).forEach((k: string) => w.bullet(k));
+      });
+    }
+
+    w.h3("Penutup");
+    (pp.penutup?.kegiatan ?? []).forEach((t: string) => w.bullet(t));
+  }
+
+  // Asesmen
+  if (c.asesmen) {
+    w.h2("Asesmen");
+    w.kv("Asesmen Awal", c.asesmen.awal ?? "-");
+    w.kv("Asesmen Proses", c.asesmen.proses ?? "-");
+    w.kv("Asesmen Akhir", c.asesmen.akhir ?? "-");
+  }
+
+  // Backward compat
+  if (!ds && c.tujuanPembelajaran) {
+    w.h2("Tujuan Pembelajaran");
+    (c.tujuanPembelajaran ?? []).forEach((t: string) => w.bullet(t));
+  }
+  if (!c.dimensiProfilLulusan?.length && c.profilPelajarPancasila?.length) {
     w.h2("Profil Pelajar Pancasila");
     c.profilPelajarPancasila.forEach((t: string) => w.bullet(t));
   }
-
-  w.h2("Model Pembelajaran");
-  w.p(c.modelPembelajaran ?? "-");
-
-  if (c.mediaDanSumber?.length) {
+  if (!ds && c.modelPembelajaran) {
+    w.h2("Model Pembelajaran");
+    w.p(c.modelPembelajaran);
+  }
+  if (!ds && c.mediaDanSumber?.length) {
     w.h2("Media & Sumber");
     c.mediaDanSumber.forEach((t: string) => w.bullet(t));
   }
-
-  w.h2("Langkah Pembelajaran");
-  w.h3("Pembukaan");
-  (c.langkahPembelajaran?.pembukaan ?? []).forEach((t: string) => w.bullet(t));
-  w.h3("Inti");
-  (c.langkahPembelajaran?.inti ?? []).forEach((t: string) => w.bullet(t));
-  w.h3("Penutup");
-  (c.langkahPembelajaran?.penutup ?? []).forEach((t: string) => w.bullet(t));
-
-  w.h2("Penilaian");
-  w.kv("Sikap", c.penilaian?.sikap ?? "-");
-  w.kv("Pengetahuan", c.penilaian?.pengetahuan ?? "-");
-  w.kv("Keterampilan", c.penilaian?.keterampilan ?? "-");
+  if (!pp && c.langkahPembelajaran) {
+    w.h2("Langkah Pembelajaran");
+    w.h3("Pembukaan");
+    (c.langkahPembelajaran?.pembukaan ?? []).forEach((t: string) => w.bullet(t));
+    w.h3("Inti");
+    (c.langkahPembelajaran?.inti ?? []).forEach((t: string) => w.bullet(t));
+    w.h3("Penutup");
+    (c.langkahPembelajaran?.penutup ?? []).forEach((t: string) => w.bullet(t));
+  }
+  if (!c.asesmen && c.penilaian) {
+    w.h2("Penilaian");
+    w.kv("Sikap", c.penilaian?.sikap ?? "-");
+    w.kv("Pengetahuan", c.penilaian?.pengetahuan ?? "-");
+    w.kv("Keterampilan", c.penilaian?.keterampilan ?? "-");
+  }
 }
 
 function soalPdf(c: any, w: PdfWriter) {
