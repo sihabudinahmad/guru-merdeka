@@ -129,35 +129,135 @@ function List({ items }: { items?: string[] }) {
 
 function RppView({ c }: { c: any }) {
   const id = c.identitas ?? {};
+  const idf = c.identifikasi ?? {};
+  const ds = c.desainPembelajaran ?? {};
+  const lp = c.lingkunganPembelajaran ?? {};
+  const pp = c.pengalamanPembelajaran ?? {};
+
   return (
     <div className="space-y-3">
+      {/* Identitas */}
       <Section title="Identitas">
+        {id.namaPenyusun && <p><b>Nama Penyusun:</b> {id.namaPenyusun}</p>}
+        {id.satuanPendidikan && <p><b>Satuan Pendidikan:</b> {id.satuanPendidikan}</p>}
         <p><b>Mata Pelajaran:</b> {id.mataPelajaran ?? "-"}</p>
-        <p><b>Kelas:</b> {id.kelas ?? "-"}{id.fase ? ` (Fase ${id.fase})` : ""}</p>
-        <p><b>Alokasi Waktu:</b> {id.alokasiWaktu ?? "-"}</p>
-        <p><b>Materi Pokok:</b> {id.materiPokok ?? "-"}</p>
+        <p><b>Kelas / Semester:</b> {id.kelas ?? "-"}{id.semester ? ` / ${id.semester}` : ""}</p>
+        {id.fase && <p><b>Fase:</b> {id.fase}</p>}
+        <p><b>Durasi:</b> {id.durasi ?? id.alokasiWaktu ?? "-"}</p>
+        {id.tahunPelajaran && <p><b>Tahun Pelajaran:</b> {id.tahunPelajaran}</p>}
       </Section>
-      <Section title="Tujuan Pembelajaran"><List items={c.tujuanPembelajaran} /></Section>
-      {c.profilPelajarPancasila?.length ? (
+
+      {/* Identifikasi */}
+      <Section title="Identifikasi — Kesiapan Peserta Didik">
+        <p><b>Karakteristik:</b> {idf.karakteristik ?? "-"}</p>
+        <p><b>Minat & Bakat:</b> {idf.minatBakat ?? "-"}</p>
+        <p><b>Latar Belakang:</b> {idf.latarBelakang ?? "-"}</p>
+        <p><b>Kebutuhan Belajar:</b> {idf.kebutuhanBelajar ?? "-"}</p>
+        <p><b>Materi Pelajaran:</b> {idf.materiPelajaran ?? "-"}</p>
+      </Section>
+
+      {/* Dimensi Profil Lulusan */}
+      {c.dimensiProfilLulusan?.length > 0 && (
+        <Section title="Dimensi Profil Lulusan">
+          <div className="flex flex-wrap gap-2">
+            {c.dimensiProfilLulusan.map((d: string, i: number) => (
+              <span key={i} className="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary">{d}</span>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Desain Pembelajaran */}
+      <Section title="Desain Pembelajaran">
+        <p className="font-medium">Capaian Pembelajaran</p>
+        <p>{ds.capaianPembelajaran ?? "-"}</p>
+        {ds.lintasDisiplinIlmu?.length > 0 && (
+          <>
+            <p className="mt-2 font-medium">Lintas Disiplin Ilmu</p>
+            <List items={ds.lintasDisiplinIlmu} />
+          </>
+        )}
+        <p className="mt-2 font-medium">Tujuan Pembelajaran</p>
+        <List items={ds.tujuanPembelajaran} />
+        <p className="mt-2 font-medium">Praktik Pedagogis</p>
+        <p><b>Model:</b> {ds.praktikPedagogis?.model ?? "-"}</p>
+        <p><b>Metode:</b> {ds.praktikPedagogis?.metode ?? "-"}</p>
+        {ds.kemitraan && (
+          <>
+            <p className="mt-2 font-medium">Kemitraan</p>
+            <p>{ds.kemitraan}</p>
+          </>
+        )}
+      </Section>
+
+      {/* Lingkungan Pembelajaran */}
+      <Section title="Lingkungan Pembelajaran">
+        <p><b>Ruang Fisik:</b> {lp.ruangFisik ?? "-"}</p>
+        <p><b>Ruang Virtual:</b> {lp.ruangVirtual ?? "-"}</p>
+        <p><b>Budaya Belajar:</b> {lp.budayaBelajar ?? "-"}</p>
+      </Section>
+
+      {/* Pemanfaatan Digital & Sarana */}
+      {(c.pemanfaatanDigital || c.saranaPrasarana?.length > 0 || c.sumberBelajar?.length > 0) && (
+        <Section title="Pemanfaatan Digital, Sarana & Sumber">
+          {c.pemanfaatanDigital && <><p className="font-medium">Pemanfaatan Digital</p><p>{c.pemanfaatanDigital}</p></>}
+          {c.saranaPrasarana?.length > 0 && <><p className="mt-2 font-medium">Sarana Prasarana</p><List items={c.saranaPrasarana} /></>}
+          {c.sumberBelajar?.length > 0 && <><p className="mt-2 font-medium">Sumber Belajar</p><List items={c.sumberBelajar} /></>}
+        </Section>
+      )}
+
+      {/* Pengalaman Pembelajaran */}
+      <Section title="Pengalaman Pembelajaran">
+        <p className="font-medium">Awal {pp.awal?.durasi ? `(${pp.awal.durasi})` : ""}</p>
+        <List items={pp.awal?.kegiatan} />
+
+        <p className="mt-3 font-medium">Inti {pp.inti?.durasi ? `(${pp.inti.durasi})` : ""}</p>
+        {pp.inti?.tahapan?.map((t: any, i: number) => (
+          <div key={i} className="mt-2 ml-2">
+            <p className="font-medium text-primary">{t.nama} {t.label ? `— ${t.label}` : ""}</p>
+            <List items={t.kegiatan} />
+          </div>
+        ))}
+        {!pp.inti?.tahapan?.length && <List items={pp.inti?.kegiatan} />}
+
+        <p className="mt-3 font-medium">Penutup</p>
+        <List items={pp.penutup?.kegiatan} />
+      </Section>
+
+      {/* Asesmen */}
+      <Section title="Asesmen">
+        <p><b>Asesmen Awal:</b> {c.asesmen?.awal ?? "-"}</p>
+        <p><b>Asesmen Proses:</b> {c.asesmen?.proses ?? "-"}</p>
+        <p><b>Asesmen Akhir:</b> {c.asesmen?.akhir ?? "-"}</p>
+      </Section>
+
+      {/* Backward compat: old format fields */}
+      {c.tujuanPembelajaran && !ds.tujuanPembelajaran && (
+        <Section title="Tujuan Pembelajaran"><List items={c.tujuanPembelajaran} /></Section>
+      )}
+      {c.profilPelajarPancasila?.length > 0 && !c.dimensiProfilLulusan?.length && (
         <Section title="Profil Pelajar Pancasila"><List items={c.profilPelajarPancasila} /></Section>
-      ) : null}
-      <Section title="Model Pembelajaran"><p>{c.modelPembelajaran ?? "-"}</p></Section>
-      {c.mediaDanSumber?.length ? (
-        <Section title="Media & Sumber"><List items={c.mediaDanSumber} /></Section>
-      ) : null}
-      <Section title="Langkah Pembelajaran">
-        <p className="font-medium">Pembukaan</p>
-        <List items={c.langkahPembelajaran?.pembukaan} />
-        <p className="mt-2 font-medium">Inti</p>
-        <List items={c.langkahPembelajaran?.inti} />
-        <p className="mt-2 font-medium">Penutup</p>
-        <List items={c.langkahPembelajaran?.penutup} />
-      </Section>
-      <Section title="Penilaian">
-        <p><b>Sikap:</b> {c.penilaian?.sikap ?? "-"}</p>
-        <p><b>Pengetahuan:</b> {c.penilaian?.pengetahuan ?? "-"}</p>
-        <p><b>Keterampilan:</b> {c.penilaian?.keterampilan ?? "-"}</p>
-      </Section>
+      )}
+      {c.modelPembelajaran && !ds.praktikPedagogis && (
+        <Section title="Model Pembelajaran"><p>{c.modelPembelajaran}</p></Section>
+      )}
+      {c.langkahPembelajaran && !pp.awal && (
+        <Section title="Langkah Pembelajaran">
+          <p className="font-medium">Pembukaan</p>
+          <List items={c.langkahPembelajaran?.pembukaan} />
+          <p className="mt-2 font-medium">Inti</p>
+          <List items={c.langkahPembelajaran?.inti} />
+          <p className="mt-2 font-medium">Penutup</p>
+          <List items={c.langkahPembelajaran?.penutup} />
+        </Section>
+      )}
+      {c.penilaian && !c.asesmen && (
+        <Section title="Penilaian">
+          <p><b>Sikap:</b> {c.penilaian?.sikap ?? "-"}</p>
+          <p><b>Pengetahuan:</b> {c.penilaian?.pengetahuan ?? "-"}</p>
+          <p><b>Keterampilan:</b> {c.penilaian?.keterampilan ?? "-"}</p>
+        </Section>
+      )}
     </div>
   );
 }
