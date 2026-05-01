@@ -52,7 +52,9 @@ function LoginPage() {
       navigate({ to: "/app" });
     } catch (err) {
       console.error(err);
-      toast.error("Tidak dapat menghubungi server. Coba lagi.");
+      const message =
+        err instanceof Error ? err.message : "Tidak dapat menghubungi server. Coba lagi.";
+      toast.error(message || "Tidak dapat menghubungi server. Coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,10 @@ function LoginPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
             Beranda
           </Link>
