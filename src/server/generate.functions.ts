@@ -345,3 +345,83 @@ export const getGeneration = createServerFn({ method: "POST" })
     if (error || !row) return { ok: false as const, error: "Dokumen tidak ditemukan." };
     return { ok: true as const, item: row };
   });
+
+const SuggestInput = z.object({
+  token: z.string().min(16).max(256),
+  mataPelajaran: z.string().min(1).max(80),
+  kelas: z.string().min(1).max(40),
+  fase: z.string().max(20).optional().default(""),
+});
+
+const SUGGEST_SCHEMA = {
+  name: "suggest_rpp_content",
+  description: "Memberikan rekomendasi materi pokok dan tujuan pembelajaran.",
+  parameters: {
+    type: "object",
+    properties: {
+      materi: {
+        type: "array",
+        items: { type: "string" },
+        description: "3-5 rekomendasi materi pokok / kompetensi dasar",
+      },
+      tujuan: {
+        type: "array",
+        items: { type: "string" },
+        description: "3-5 rekomendasi tujuan pembelajaran yang terukur",
+      },
+    },
+    required: ["materi", "tujuan"],
+    additionalProperties: false,
+  },
+};
+
+export const suggestRppContent = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => SuggestInput.parse(d))
+  .handler(async ({ data }) => {
+    const sess = await getCodeIdFromToken(data.token);
+    if (!sess) return { ok: false as const, error: "Sesi tidak valid." };
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI Gateway belum dikonfigurasi." };
+
+    const res = await fetch(GATEWAY_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Anda adalah ahli kurikulum pendidikan Indonesia (Kurikulum Merdeka). Berikan rekomendasi materi pokok dan tujuan pembelajaran yang relevan, konkret, dan terukur.",
+          },
+          {
+            role: "user",
+            content: `Berikan rekomendasi untuk:\n- Mata Pelajaran: ${data.mataPelajaran}\n- Kelas: ${data.kelas}${data.fase ? ` (Fase ${data.fase})` : ""}\n\nBerikan 3-5 materi pokok yang sesuai dan 3-5 tujuan pembelajaran yang terukur sesuai Kurikulum Merdeka.`,
+          },
+        ],
+        tools: [{ type: "function", function: SUGGEST_SCHEMA }],
+        tool_choice: { type: "function", function: { name: "suggest_rpp_content" } },
+      }),
+    });
+
+    if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan." };
+    if (res.status === 402) return { ok: false as const, error: "Kredit AI habis." };
+    if (!res.ok) return { ok: false as const, error: "Gagal menghubungi AI." };
+
+    const json = await res.json();
+    const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      return { ok: false as const, error: "AI tidak mengembalikan hasil." };
+    }
+
+    try {
+      const parsed = JSON.parse(toolCall.function.arguments) as { materi: string[]; tujuan: string[] };
+      return { ok: true as const, materi: parsed.materi, tujuan: parsed.tujuan };
+    } catch {
+      return { ok: false as const, error: "Gagal mengurai hasil AI." };
+    }
+  });
