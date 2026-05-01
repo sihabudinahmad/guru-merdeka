@@ -23,10 +23,15 @@ function RppPage() {
     mataPelajaran: "",
     kelas: "",
     fase: "",
+    semester: "",
+    satuanPendidikan: "",
+    tahunPelajaran: "",
+    namaPenyusun: "",
     alokasiWaktu: "2 x 40 menit",
     materi: "",
     tujuanPembelajaran: "",
     modelPembelajaran: "Discovery Learning",
+    karakteristikPesertaDidik: "",
   });
 
   const [suggesting, setSuggesting] = useState(false);
@@ -78,15 +83,33 @@ function RppPage() {
 
       <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:grid-cols-2">
         <Field label="Mata Pelajaran *">
-          <Input value={form.mataPelajaran} onChange={(e) => setForm({ ...form, mataPelajaran: e.target.value })} placeholder="Matematika" />
+          <Input value={form.mataPelajaran} onChange={(e) => setForm({ ...form, mataPelajaran: e.target.value })} placeholder="Bahasa Indonesia" />
         </Field>
         <Field label="Kelas *">
-          <Input value={form.kelas} onChange={(e) => setForm({ ...form, kelas: e.target.value })} placeholder="VII / 7" />
+          <Input value={form.kelas} onChange={(e) => setForm({ ...form, kelas: e.target.value })} placeholder="IX / 9" />
         </Field>
         <Field label="Fase (opsional)">
           <Input value={form.fase} onChange={(e) => setForm({ ...form, fase: e.target.value })} placeholder="D" />
         </Field>
-        <Field label="Alokasi Waktu">
+        <Field label="Semester">
+          <Select value={form.semester} onValueChange={(v) => setForm({ ...form, semester: v })}>
+            <SelectTrigger><SelectValue placeholder="Pilih semester" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Ganjil">Ganjil</SelectItem>
+              <SelectItem value="Genap">Genap</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Satuan Pendidikan">
+          <Input value={form.satuanPendidikan} onChange={(e) => setForm({ ...form, satuanPendidikan: e.target.value })} placeholder="SMP Negeri 1 ..." />
+        </Field>
+        <Field label="Tahun Pelajaran">
+          <Input value={form.tahunPelajaran} onChange={(e) => setForm({ ...form, tahunPelajaran: e.target.value })} placeholder="2025/2026" />
+        </Field>
+        <Field label="Nama Penyusun">
+          <Input value={form.namaPenyusun} onChange={(e) => setForm({ ...form, namaPenyusun: e.target.value })} placeholder="Nama guru" />
+        </Field>
+        <Field label="Alokasi Waktu / Durasi">
           <Input value={form.alokasiWaktu} onChange={(e) => setForm({ ...form, alokasiWaktu: e.target.value })} />
         </Field>
         <Field label="Model Pembelajaran" className="sm:col-span-2">
@@ -100,6 +123,15 @@ function RppPage() {
               <SelectItem value="Inquiry Learning">Inquiry Learning</SelectItem>
             </SelectContent>
           </Select>
+        </Field>
+
+        <Field label="Karakteristik Peserta Didik (opsional)" className="sm:col-span-2">
+          <Textarea
+            rows={2}
+            value={form.karakteristikPesertaDidik}
+            onChange={(e) => setForm({ ...form, karakteristikPesertaDidik: e.target.value })}
+            placeholder="Deskripsikan karakteristik siswa, misal: tinggal di lingkungan pesantren, aktif, suka diskusi…"
+          />
         </Field>
 
         {/* Suggest button */}
@@ -125,7 +157,7 @@ function RppPage() {
             rows={3}
             value={form.materi}
             onChange={(e) => setForm({ ...form, materi: e.target.value })}
-            placeholder="Operasi hitung bilangan bulat dan pecahan…"
+            placeholder="Teks Rekon Faktual…"
           />
           {suggestions?.materi && suggestions.materi.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">

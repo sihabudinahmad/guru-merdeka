@@ -29,10 +29,15 @@ const RppInput = z.object({
   mataPelajaran: z.string().min(1).max(80),
   kelas: z.string().min(1).max(40),
   fase: z.string().max(20).optional().default(""),
+  semester: z.string().max(20).optional().default(""),
+  satuanPendidikan: z.string().max(120).optional().default(""),
+  tahunPelajaran: z.string().max(20).optional().default(""),
+  namaPenyusun: z.string().max(80).optional().default(""),
   alokasiWaktu: z.string().min(1).max(40),
   materi: z.string().min(1).max(500),
   tujuanPembelajaran: z.string().max(800).optional().default(""),
   modelPembelajaran: z.string().max(80).optional().default("Discovery Learning"),
+  karakteristikPesertaDidik: z.string().max(600).optional().default(""),
 });
 
 const SoalInput = z.object({
@@ -61,50 +66,129 @@ const GenerateInput = z.object({
 
 const RPP_SCHEMA = {
   name: "tulis_rpp",
-  description: "Menyusun RPP terstruktur sesuai Kurikulum Merdeka.",
+  description: "Menyusun RPP (Perencanaan Pelaksanaan Pembelajaran) terstruktur dan detail sesuai Kurikulum Merdeka.",
   parameters: {
     type: "object",
     properties: {
       identitas: {
         type: "object",
         properties: {
+          namaPenyusun: { type: "string" },
+          satuanPendidikan: { type: "string" },
           mataPelajaran: { type: "string" },
           kelas: { type: "string" },
+          semester: { type: "string" },
           fase: { type: "string" },
-          alokasiWaktu: { type: "string" },
-          materiPokok: { type: "string" },
+          durasi: { type: "string" },
+          tahunPelajaran: { type: "string" },
         },
-        required: ["mataPelajaran", "kelas", "alokasiWaktu", "materiPokok"],
+        required: ["mataPelajaran", "kelas", "durasi"],
       },
-      tujuanPembelajaran: { type: "array", items: { type: "string" } },
-      profilPelajarPancasila: { type: "array", items: { type: "string" } },
-      modelPembelajaran: { type: "string" },
-      mediaDanSumber: { type: "array", items: { type: "string" } },
-      langkahPembelajaran: {
+      identifikasi: {
+        type: "object",
+        description: "Identifikasi kesiapan peserta didik",
+        properties: {
+          karakteristik: { type: "string", description: "Karakteristik umum peserta didik" },
+          minatBakat: { type: "string", description: "Minat dan bakat peserta didik" },
+          latarBelakang: { type: "string", description: "Latar belakang peserta didik" },
+          kebutuhanBelajar: { type: "string", description: "Kebutuhan belajar peserta didik" },
+          materiPelajaran: { type: "string", description: "Materi pelajaran yang akan diajarkan" },
+        },
+        required: ["karakteristik", "minatBakat", "latarBelakang", "kebutuhanBelajar", "materiPelajaran"],
+      },
+      dimensiProfilLulusan: {
+        type: "array",
+        items: { type: "string" },
+        description: "Dimensi Profil Lulusan yang relevan, pilih dari: Keimanan dan Ketaqwaan Terhadap Tuhan YME, Kewargaan, Kreativitas, Kemandirian, Komunikasi, Kesehatan, Kolaborasi, Penalaran Kritis",
+      },
+      desainPembelajaran: {
         type: "object",
         properties: {
-          pembukaan: { type: "array", items: { type: "string" } },
-          inti: { type: "array", items: { type: "string" } },
-          penutup: { type: "array", items: { type: "string" } },
+          capaianPembelajaran: { type: "string", description: "Capaian Pembelajaran sesuai Kurikulum Merdeka" },
+          lintasDisiplinIlmu: { type: "array", items: { type: "string" }, description: "Integrasi lintas disiplin ilmu" },
+          tujuanPembelajaran: { type: "array", items: { type: "string" }, description: "Tujuan pembelajaran yang terukur" },
+          praktikPedagogis: {
+            type: "object",
+            properties: {
+              model: { type: "string" },
+              metode: { type: "string" },
+            },
+            required: ["model", "metode"],
+          },
+          kemitraan: { type: "string" },
         },
-        required: ["pembukaan", "inti", "penutup"],
+        required: ["capaianPembelajaran", "tujuanPembelajaran", "praktikPedagogis"],
       },
-      penilaian: {
+      lingkunganPembelajaran: {
         type: "object",
         properties: {
-          sikap: { type: "string" },
-          pengetahuan: { type: "string" },
-          keterampilan: { type: "string" },
+          ruangFisik: { type: "string" },
+          ruangVirtual: { type: "string" },
+          budayaBelajar: { type: "string" },
         },
-        required: ["sikap", "pengetahuan", "keterampilan"],
+        required: ["ruangFisik", "ruangVirtual", "budayaBelajar"],
+      },
+      pemanfaatanDigital: { type: "string" },
+      saranaPrasarana: { type: "array", items: { type: "string" } },
+      sumberBelajar: { type: "array", items: { type: "string" } },
+      pengalamanPembelajaran: {
+        type: "object",
+        properties: {
+          awal: {
+            type: "object",
+            properties: {
+              durasi: { type: "string" },
+              kegiatan: { type: "array", items: { type: "string" } },
+            },
+            required: ["durasi", "kegiatan"],
+          },
+          inti: {
+            type: "object",
+            properties: {
+              durasi: { type: "string" },
+              tahapan: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    nama: { type: "string", description: "Nama tahapan, misal: Memahami, Mengaplikasi, Merefleksi" },
+                    label: { type: "string", description: "Label pendekatan, misal: Berkesadaran, Bermakna, Menggembirakan" },
+                    kegiatan: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["nama", "kegiatan"],
+                },
+              },
+            },
+            required: ["durasi", "tahapan"],
+          },
+          penutup: {
+            type: "object",
+            properties: {
+              kegiatan: { type: "array", items: { type: "string" } },
+            },
+            required: ["kegiatan"],
+          },
+        },
+        required: ["awal", "inti", "penutup"],
+      },
+      asesmen: {
+        type: "object",
+        properties: {
+          awal: { type: "string", description: "Asesmen awal (diagnostik)" },
+          proses: { type: "string", description: "Asesmen proses (formatif)" },
+          akhir: { type: "string", description: "Asesmen akhir (sumatif)" },
+        },
+        required: ["awal", "proses", "akhir"],
       },
     },
     required: [
       "identitas",
-      "tujuanPembelajaran",
-      "modelPembelajaran",
-      "langkahPembelajaran",
-      "penilaian",
+      "identifikasi",
+      "dimensiProfilLulusan",
+      "desainPembelajaran",
+      "lingkunganPembelajaran",
+      "pengalamanPembelajaran",
+      "asesmen",
     ],
     additionalProperties: false,
   },
@@ -182,15 +266,30 @@ function buildPrompt(type: "rpp" | "soal" | "rkp", payload: unknown): { system: 
     const p = RppInput.parse(payload);
     return {
       system:
-        "Anda adalah perancang kurikulum berpengalaman di Indonesia. Buat RPP berkualitas, ringkas, sesuai Kurikulum Merdeka, dalam Bahasa Indonesia formal pendidikan.",
-      user: `Buat RPP untuk:
+        `Anda adalah perancang kurikulum berpengalaman di Indonesia. Buat Perencanaan Pelaksanaan Pembelajaran (RPP) yang sangat detail dan berkualitas sesuai Kurikulum Merdeka, dalam Bahasa Indonesia formal pendidikan.
+
+Format RPP harus mengikuti struktur:
+1. IDENTITAS - data lengkap penyusun, satuan pendidikan, mapel, kelas, semester, durasi, tahun pelajaran
+2. IDENTIFIKASI - kesiapan peserta didik: karakteristik, minat bakat, latar belakang, kebutuhan belajar, materi pelajaran
+3. DIMENSI PROFIL LULUSAN - pilih yang relevan dari 8 dimensi
+4. DESAIN PEMBELAJARAN - capaian pembelajaran, lintas disiplin ilmu, tujuan pembelajaran terukur, praktik pedagogis (model & metode), kemitraan
+5. LINGKUNGAN PEMBELAJARAN - ruang fisik, virtual, budaya belajar
+6. PEMANFAATAN DIGITAL - alat digital yang digunakan
+7. SARANA PRASARANA - daftar alat dan bahan
+8. SUMBER BELAJAR - referensi pembelajaran
+9. PENGALAMAN PEMBELAJARAN - kegiatan Awal (dengan durasi), Inti (dengan durasi dan tahapan: Memahami, Mengaplikasi, Merefleksi), Penutup. Setiap kegiatan harus konkret, detail langkah demi langkah, dan kontekstual.
+10. ASESMEN - asesmen awal (diagnostik), proses (formatif), akhir (sumatif)
+
+Buat langkah pembelajaran yang sangat detail dan konkret seperti contoh RPP profesional guru Indonesia.`,
+      user: `Buat RPP detail untuk:
 - Mata Pelajaran: ${p.mataPelajaran}
-- Kelas: ${p.kelas}${p.fase ? ` (Fase ${p.fase})` : ""}
-- Alokasi Waktu: ${p.alokasiWaktu}
+- Kelas: ${p.kelas}${p.fase ? ` (Fase ${p.fase})` : ""}${p.semester ? `\n- Semester: ${p.semester}` : ""}${p.satuanPendidikan ? `\n- Satuan Pendidikan: ${p.satuanPendidikan}` : ""}${p.tahunPelajaran ? `\n- Tahun Pelajaran: ${p.tahunPelajaran}` : ""}${p.namaPenyusun ? `\n- Nama Penyusun: ${p.namaPenyusun}` : ""}
+- Alokasi Waktu / Durasi: ${p.alokasiWaktu}
 - Materi Pokok: ${p.materi}
 - Model Pembelajaran: ${p.modelPembelajaran}
-${p.tujuanPembelajaran ? `- Catatan Tujuan: ${p.tujuanPembelajaran}` : ""}
-Sertakan minimal 3 tujuan pembelajaran terukur dan langkah pembelajaran yang konkret.`,
+${p.tujuanPembelajaran ? `- Tujuan Pembelajaran: ${p.tujuanPembelajaran}` : ""}
+${p.karakteristikPesertaDidik ? `- Karakteristik Peserta Didik: ${p.karakteristikPesertaDidik}` : ""}
+Sertakan minimal 3 tujuan pembelajaran terukur, langkah pembelajaran yang sangat detail dan konkret per tahapan, serta asesmen yang sesuai.`,
       tool: RPP_SCHEMA,
     };
   }
