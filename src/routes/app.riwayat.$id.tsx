@@ -160,7 +160,7 @@ function RiwayatDetail() {
         </p>
 
         {/* Collapsible input params */}
-        {item.input_payload && (
+        {Boolean(item.input_payload) && (
           <div className="mt-3 border-t border-border pt-3">
             <button
               onClick={() => setShowParams((v) => !v)}
