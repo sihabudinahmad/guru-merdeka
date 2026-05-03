@@ -32,9 +32,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   BrainCircuit,
   Check,
   Copy,
+  Download,
   FileText,
   KeyRound,
   Loader2,
@@ -50,6 +60,7 @@ import { toast } from "sonner";
 import {
   listAccessCodes,
   createAccessCode,
+  createAccessCodesBulk,
   setAccessCodeActive,
   resetDevices,
   deleteAccessCode,
@@ -113,11 +124,58 @@ function withClientIds(items: AiModelOption[]): EditableAiModelOption[] {
   return items.map((item) => ({ ...item, clientId: makeClientId() }));
 }
 
+async function exportCodesToExcel(items: CodeRow[]) {
+  const XLSX = await import("xlsx");
+  const rows = items.map((row, index) => ({
+    No: index + 1,
+    Kode: row.code,
+    Label: row.label || "",
+    Aktif: row.is_active ? "Ya" : "Tidak",
+    "Maks Perangkat": row.max_devices,
+    "Perangkat Terpakai": row.devices_used,
+    "Jumlah Dokumen": row.generations_count,
+    Kedaluwarsa: row.expires_at ? new Date(row.expires_at).toLocaleDateString("id-ID") : "-",
+    Dibuat: new Date(row.created_at).toLocaleString("id-ID"),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 6 },
+    { wch: 22 },
+    { wch: 32 },
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 14 },
+    { wch: 22 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Kode Akses");
+  const data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `kode-akses-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function AdminPanel() {
   const [items, setItems] = useState<CodeRow[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [aiSettings, setAiSettings] = useState<AiSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const refresh = async () => {
     setLoading(true);
@@ -161,6 +219,49 @@ function AdminPanel() {
     refresh();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [items?.length]);
+
+  const handleExportExcel = async () => {
+    if (!items?.length) {
+      toast.error("Belum ada data kode untuk diexport.");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await exportCodesToExcel(items);
+      toast.success("Export Excel berhasil.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal export Excel.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const totalItems = items?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedItems = (items ?? []).slice(startIndex, startIndex + pageSize);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.min(totalPages, Math.max(1, page)));
+  };
+
+  const getPageTokens = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safePage <= 4) return [1, 2, 3, 4, 5, "ellipsis-right", totalPages] as const;
+    if (safePage >= totalPages - 3) {
+      return [1, "ellipsis-left", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages] as const;
+    }
+    return [1, "ellipsis-left", safePage - 1, safePage, safePage + 1, "ellipsis-right", totalPages] as const;
+  };
+
+  const pageTokens = getPageTokens();
+
   return (
     <div className="space-y-6">
       <section id="konfigurasi-ai" className="scroll-mt-24">
@@ -187,10 +288,16 @@ function AdminPanel() {
       <div id="kode-akses" className="scroll-mt-24 rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold">Daftar Kode</h2>
-          <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={loading || exporting || !items?.length}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Export Excel
+            </Button>
+            <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {loading && !items ? (
@@ -202,11 +309,91 @@ function AdminPanel() {
             Belum ada kode. Klik <b>Buat Kode</b> untuk menambah.
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {items.map((row) => (
-              <CodeRowItem key={row.id} row={row} onChanged={refresh} />
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y divide-border">
+              {paginatedItems.map((row) => (
+                <CodeRowItem key={row.id} row={row} onChanged={refresh} />
+              ))}
+            </ul>
+
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Baris per halaman</span>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(value) => {
+                      const next = Number(value) || 10;
+                      setPageSize(next);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-[84px]">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Menampilkan {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} dari {totalItems} kode
+                </p>
+              </div>
+
+              <Pagination className="mx-0 w-auto justify-start sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      aria-disabled={safePage <= 1}
+                      className={safePage <= 1 ? "pointer-events-none opacity-50" : undefined}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        goToPage(safePage - 1);
+                      }}
+                    />
+                  </PaginationItem>
+
+                  {pageTokens.map((token, idx) =>
+                    typeof token === "number" ? (
+                      <PaginationItem key={token}>
+                        <PaginationLink
+                          href="#"
+                          isActive={token === safePage}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            goToPage(token);
+                          }}
+                        >
+                          {token}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={`${token}-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={safePage >= totalPages}
+                      className={safePage >= totalPages ? "pointer-events-none opacity-50" : undefined}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        goToPage(safePage + 1);
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -892,6 +1079,7 @@ function CodeRowItem({ row, onChanged }: { row: CodeRow; onChanged: () => void }
 
 function CreateCodeDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(1);
   const [label, setLabel] = useState("");
   const [code, setCode] = useState("");
   const [maxDevices, setMaxDevices] = useState(2);
@@ -899,6 +1087,7 @@ function CreateCodeDialog({ onCreated }: { onCreated: () => void }) {
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
+    setCount(1);
     setLabel("");
     setCode("");
     setMaxDevices(2);
@@ -909,17 +1098,31 @@ function CreateCodeDialog({ onCreated }: { onCreated: () => void }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await callWithAuth(createAccessCode, {
-        code: code.trim() || undefined,
-        label: label.trim() || undefined,
-        max_devices: maxDevices,
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-      });
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
+      if (count > 1) {
+        const res = await callWithAuth(createAccessCodesBulk, {
+          count,
+          label: label.trim() || undefined,
+          max_devices: maxDevices,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        });
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        toast.success(`${res.count} kode berhasil dibuat.`);
+      } else {
+        const res = await callWithAuth(createAccessCode, {
+          code: code.trim() || undefined,
+          label: label.trim() || undefined,
+          max_devices: maxDevices,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        });
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        toast.success(`Kode ${res.item?.code} dibuat.`);
       }
-      toast.success(`Kode ${res.item?.code} dibuat.`);
       setOpen(false);
       reset();
       onCreated();
@@ -948,6 +1151,18 @@ function CreateCodeDialog({ onCreated }: { onCreated: () => void }) {
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="count">Jumlah Kode</Label>
+            <Input
+              id="count"
+              type="number"
+              min={1}
+              max={200}
+              value={count}
+              onChange={(e) => setCount(Math.min(200, Math.max(1, Number(e.target.value) || 1)))}
+              disabled={submitting}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="label">Label (opsional)</Label>
             <Input
               id="label"
@@ -962,14 +1177,15 @@ function CreateCodeDialog({ onCreated }: { onCreated: () => void }) {
             <Label htmlFor="code">Kode (opsional)</Label>
             <Input
               id="code"
-              placeholder="GURU-AB12-3456 (otomatis bila kosong)"
+              placeholder={count > 1 ? "Otomatis untuk generate massal" : "GURU-AB12-3456 (otomatis bila kosong)"}
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               autoCapitalize="characters"
               autoComplete="off"
               maxLength={64}
-              disabled={submitting}
+              disabled={submitting || count > 1}
             />
+            {count > 1 && <p className="text-xs text-muted-foreground">Untuk jumlah &gt; 1, kode akan dibuat otomatis.</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

@@ -10,7 +10,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Sparkles, Lightbulb } from "lucide-react";
 import { ResultPanel, useGenerator } from "@/components/generator-shared";
-import { suggestSoalContent } from "@/functions/generate.functions";
+import { suggestSoalContent, suggestSoalTujuan } from "@/functions/generate.functions";
 import { getSession } from "@/lib/session";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ const FASE = [
   { label: "Fase A (Kelas 1-2)", value: "A" },
   { label: "Fase B (Kelas 3-4)", value: "B" },
   { label: "Fase C (Kelas 5-6)", value: "C" },
-  { label: "Fase D (Kelas 7-8)", value: "D" },
+  { label: "Fase D (Kelas 7-9)", value: "D" },
   { label: "Fase E (Kelas 10)", value: "E" },
   { label: "Fase F (Kelas 11-12)", value: "F" },
 ];
@@ -68,9 +68,9 @@ const FORMAT_SOAL = [
 ];
 
 const PILIHAN_JAWABAN_PG = [
-  { label: "3 jawaban (A-C)", value: 3 },
-  { label: "4 jawaban (A-D)", value: 4 },
-  { label: "5 jawaban (A-E)", value: 5 },
+  { label: "3 Opsi (A-C)", value: 3 },
+  { label: "4 Opsi (A-D)", value: 4 },
+  { label: "5 Opsi (A-E)", value: 5 },
 ];
 
 const TINGKAT_KESULITAN = [
@@ -78,6 +78,9 @@ const TINGKAT_KESULITAN = [
   { label: "LOTS (Lower Order Thinking Skills)", value: "lots" },
   { label: "Campuran", value: "campuran" },
 ];
+
+const MANUAL_SUBJECT_VALUE = "__manual__";
+const MANUAL_WAKTU_VALUE = "Lainnya";
 
 function parseTipeSoal(value: string): string[] {
   return value
@@ -90,12 +93,17 @@ function SoalPage() {
   const { loading, result, run } = useGenerator();
   const [form, setForm] = useState({
     jenisUjian: "",
+    headerBaris1: "",
+    headerBaris2: "",
+    tahunPelajaran: "",
+    hariTanggalUjian: "",
     fase: "",
     kelas: "",
     mataPelajaran: "",
     mataPelajaranManual: "",
     semester: "",
     waktu: "60 menit",
+    waktuManual: "",
     topik: "",
     tujuanPembelajaran: "",
     sumberReferensi: "",
@@ -105,23 +113,40 @@ function SoalPage() {
     jumlahPilihanPg: 4 as 3 | 4 | 5,
     tingkat: "campuran" as "hots" | "lots" | "campuran",
     tambahkanIlustrasi: false,
+    petunjukPengerjaan: [
+      "Isikan identitas Anda dalam lembar jawaban dengan teliti dan benar",
+      "Tersedia waktu 60 menit untuk mengerjakan paket soal ini",
+      "Periksalah naskah soal yang Anda terima",
+      "Baca dan pahamilah dengan baik pernyataan atau soal sebelum Anda menjawab",
+      "Periksalah pekerjaan Anda sebelum diserahkan kepada pengawas ujian",
+    ].join("\n"),
   });
 
-  const [suggesting, setSuggesting] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ topik: string[]; tujuan: string[] } | null>(null);
+  const [suggestingTopik, setSuggestingTopik] = useState(false);
+  const [suggestingTujuan, setSuggestingTujuan] = useState(false);
+  const [topikSuggestions, setTopikSuggestions] = useState<string[]>([]);
+  const [tujuanSuggestions, setTujuanSuggestions] = useState<string[]>([]);
 
-  const canSuggest = form.mataPelajaran.trim() && form.kelas.trim();
+  const isManualSubject = form.mataPelajaran === MANUAL_SUBJECT_VALUE;
+  const isManualWaktu = form.waktu === MANUAL_WAKTU_VALUE;
+  const effectiveMataPelajaran = isManualSubject
+    ? form.mataPelajaranManual.trim()
+    : form.mataPelajaran;
+  const effectiveWaktu = isManualWaktu ? form.waktuManual.trim() : form.waktu;
 
-  const handleSuggest = async () => {
+  const canSuggestTopik = Boolean(effectiveMataPelajaran && form.kelas.trim());
+  const canSuggestTujuan = Boolean(canSuggestTopik && form.topik.trim());
+
+  const handleSuggestTopik = async () => {
     const sess = getSession();
     if (!sess) return;
-    setSuggesting(true);
-    setSuggestions(null);
+    setSuggestingTopik(true);
+    setTopikSuggestions([]);
     try {
       const res = await suggestSoalContent({
         data: {
           token: sess.token,
-          mataPelajaran: form.mataPelajaran,
+          mataPelajaran: effectiveMataPelajaran,
           kelas: form.kelas,
           fase: form.fase,
           tipeSoal: form.tipeSoal,
@@ -131,16 +156,53 @@ function SoalPage() {
         toast.error(res.error);
         return;
       }
-      setSuggestions({ topik: res.topik, tujuan: res.tujuan });
-      toast.success("Rekomendasi siap! Klik untuk memilih.");
+      setTopikSuggestions(res.topik);
+      toast.success("Rekomendasi topik siap! Klik untuk memilih.");
     } catch {
-      toast.error("Gagal mendapatkan rekomendasi.");
+      toast.error("Gagal mendapatkan rekomendasi topik.");
     } finally {
-      setSuggesting(false);
+      setSuggestingTopik(false);
     }
   };
 
-  const mataPelajaranOptions = form.fase ? MATA_PELAJARAN_BY_FASE[form.fase] || [] : [];
+  const handleSuggestTujuan = async () => {
+    const sess = getSession();
+    if (!sess) return;
+    const topikTerpilih = form.topik.trim();
+    if (!topikTerpilih) {
+      toast.error("Pilih/isi topik pembelajaran terlebih dahulu.");
+      return;
+    }
+
+    setSuggestingTujuan(true);
+    setTujuanSuggestions([]);
+    try {
+      const res = await suggestSoalTujuan({
+        data: {
+          token: sess.token,
+          mataPelajaran: effectiveMataPelajaran,
+          kelas: form.kelas,
+          fase: form.fase,
+          tipeSoal: form.tipeSoal,
+          topik: topikTerpilih,
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setTujuanSuggestions(res.tujuan);
+      toast.success("Rekomendasi tujuan siap! Klik untuk memilih.");
+    } catch {
+      toast.error("Gagal mendapatkan rekomendasi tujuan.");
+    } finally {
+      setSuggestingTujuan(false);
+    }
+  };
+
+  const mataPelajaranOptions = form.fase
+    ? [...(MATA_PELAJARAN_BY_FASE[form.fase] || []), "Lainnya (manual)"]
+    : [];
   const selectedTipeSoal = parseTipeSoal(form.tipeSoal);
 
   const toggleTipeSoal = (item: string) => {
@@ -154,8 +216,16 @@ function SoalPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.kelas || !form.mataPelajaran || !form.formatSoal) return;
-    run("soal", form);
+    if (!form.kelas || !effectiveMataPelajaran || !effectiveWaktu || !form.formatSoal) return;
+    const defaultHeaderBaris1 = form.jenisUjian || "Sumatif Lingkup Materi";
+    const defaultHeaderBaris2 = `TAHUN PELAJARAN ${form.tahunPelajaran || "20.../20..."}`;
+    run("soal", {
+      ...form,
+      mataPelajaran: effectiveMataPelajaran,
+      waktu: effectiveWaktu,
+      headerBaris1: form.headerBaris1.trim() || defaultHeaderBaris1,
+      headerBaris2: form.headerBaris2.trim() || defaultHeaderBaris2,
+    });
   };
 
   return (
@@ -181,7 +251,7 @@ function SoalPage() {
             </Select>
           </Field>
           <Field label="Fase *">
-            <Select value={form.fase} onValueChange={(v) => setForm({ ...form, fase: v, mataPelajaran: "" })}>
+            <Select value={form.fase} onValueChange={(v) => setForm({ ...form, fase: v, mataPelajaran: "", mataPelajaranManual: "" })}>
               <SelectTrigger><SelectValue placeholder="Pilih fase" /></SelectTrigger>
               <SelectContent>
                 {FASE.map((f) => (
@@ -200,24 +270,17 @@ function SoalPage() {
             />
           </Field>
           <Field label="Mata Pelajaran *">
-            <Select value={form.mataPelajaran} onValueChange={(v) => setForm({ ...form, mataPelajaran: v })}>
+            <Select value={form.mataPelajaran} onValueChange={(v) => setForm({ ...form, mataPelajaran: v, mataPelajaranManual: v === MANUAL_SUBJECT_VALUE ? form.mataPelajaranManual : "" })}>
               <SelectTrigger><SelectValue placeholder="Pilih mata pelajaran" /></SelectTrigger>
               <SelectContent>
                 {mataPelajaranOptions.map((mp) => (
-                  <SelectItem key={mp} value={mp}>{mp}</SelectItem>
+                  <SelectItem key={mp} value={mp === "Lainnya (manual)" ? MANUAL_SUBJECT_VALUE : mp}>{mp}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
 
-          {/* Row 3: Mata Pelajaran (Manual) | Semester */}
-          <Field label="Mata Pelajaran (Manual)">
-            <Input
-              value={form.mataPelajaranManual}
-              onChange={(e) => setForm({ ...form, mataPelajaranManual: e.target.value })}
-              placeholder="Upload PDF atau input manual"
-            />
-          </Field>
+          {/* Row 3: Semester */}
           <Field label="Semester">
             <Select value={form.semester} onValueChange={(v) => setForm({ ...form, semester: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -229,9 +292,59 @@ function SoalPage() {
             </Select>
           </Field>
 
-          {/* Row 4: Waktu & Jumlah Soal */}
+          <Field label="Tahun Pelajaran">
+            <Input
+              value={form.tahunPelajaran}
+              onChange={(e) => setForm({ ...form, tahunPelajaran: e.target.value })}
+              placeholder="Contoh: 2025/2026"
+            />
+          </Field>
+
+          <Field label="Hari, Tanggal Ujian" className="sm:col-span-2">
+            <Input
+              value={form.hariTanggalUjian}
+              onChange={(e) => setForm({ ...form, hariTanggalUjian: e.target.value })}
+              placeholder="Contoh: Senin, 12 Mei 2026"
+            />
+          </Field>
+
+          <Field label="Header Baris 1 (Opsional)" className="sm:col-span-2">
+            <Input
+              value={form.headerBaris1}
+              onChange={(e) => setForm({ ...form, headerBaris1: e.target.value })}
+              placeholder="Default: Jenis Ujian / Sumatif Lingkup Materi"
+            />
+          </Field>
+
+          <Field label="Header Baris 2 (Opsional)" className="sm:col-span-2">
+            <Input
+              value={form.headerBaris2}
+              onChange={(e) => setForm({ ...form, headerBaris2: e.target.value })}
+              placeholder="Default: TAHUN PELAJARAN ..."
+            />
+          </Field>
+
+          {/* Row 4: Mata Pelajaran (Manual) */}
+          {isManualSubject && (
+            <Field label="Mata Pelajaran (Manual) *" className="sm:col-span-2">
+              <Input
+                value={form.mataPelajaranManual}
+                onChange={(e) => setForm({ ...form, mataPelajaranManual: e.target.value })}
+                placeholder="Contoh: Informatika, Bahasa Jepang, dll"
+              />
+            </Field>
+          )}
+
+          {/* Row 5: Waktu & Jumlah Soal */}
           <Field label="Waktu Pengerjaan">
-            <Select value={form.waktu} onValueChange={(v) => setForm({ ...form, waktu: v })}>
+            <Select
+              value={form.waktu}
+              onValueChange={(v) => setForm({
+                ...form,
+                waktu: v,
+                waktuManual: v === MANUAL_WAKTU_VALUE ? form.waktuManual : "",
+              })}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {WAKTU.map((w) => (
@@ -240,6 +353,16 @@ function SoalPage() {
               </SelectContent>
             </Select>
           </Field>
+
+          {isManualWaktu && (
+            <Field label="Waktu Pengerjaan (Manual) *" className="sm:col-span-2">
+              <Input
+                value={form.waktuManual}
+                onChange={(e) => setForm({ ...form, waktuManual: e.target.value })}
+                placeholder="Contoh: 75 menit"
+              />
+            </Field>
+          )}
           <Field label="Jumlah Soal">
             <Input
               type="number"
@@ -250,26 +373,46 @@ function SoalPage() {
             />
           </Field>
 
-          {/* Row 5: Topik Pembelajaran */}
+          {/* Row 6: Topik Pembelajaran */}
           <Field label="Topik Pembelajaran" className="sm:col-span-2">
             <Textarea
               rows={2}
               value={form.topik}
-              onChange={(e) => setForm({ ...form, topik: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, topik: e.target.value });
+                setTujuanSuggestions([]);
+              }}
               placeholder="Contoh: Sistem Pencernaan Manusia, Photosynthesis, dll"
             />
-            {suggestions?.topik && suggestions.topik.length > 0 && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canSuggestTopik || suggestingTopik}
+                onClick={handleSuggestTopik}
+                className="gap-1.5"
+              >
+                {suggestingTopik ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
+                {suggestingTopik ? "Memuat topik…" : "Rekomendasikan Topik"}
+              </Button>
+              {!canSuggestTopik && (
+                <p className="mt-1 text-xs text-muted-foreground">Isi Mata Pelajaran dan Kelas terlebih dahulu.</p>
+              )}
+            </div>
+            {topikSuggestions.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {suggestions.topik.map((item, i) => (
+                {topikSuggestions.map((item, i) => (
                   <button
                     key={i}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      setTujuanSuggestions([]);
                       setForm((f) => ({
                         ...f,
                         topik: f.topik ? `${f.topik}\n${item}` : item,
-                      }))
-                    }
+                      }));
+                    }}
                     className="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary hover:bg-primary/10 transition-colors text-left"
                   >
                     + {item}
@@ -279,7 +422,7 @@ function SoalPage() {
             )}
           </Field>
 
-          {/* Row 6: Tujuan Pembelajaran */}
+          {/* Row 7: Tujuan Pembelajaran */}
           <Field label="Tujuan Pembelajaran" className="sm:col-span-2">
             <Textarea
               rows={2}
@@ -287,9 +430,25 @@ function SoalPage() {
               onChange={(e) => setForm({ ...form, tujuanPembelajaran: e.target.value })}
               placeholder="Siswa dapat mengidentifikasi, menjelaskan, menganalisis... (opsional, AI dapat merekomendasikan)"
             />
-            {suggestions?.tujuan && suggestions.tujuan.length > 0 && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canSuggestTujuan || suggestingTujuan}
+                onClick={handleSuggestTujuan}
+                className="gap-1.5"
+              >
+                {suggestingTujuan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
+                {suggestingTujuan ? "Memuat tujuan…" : "Rekomendasikan Tujuan"}
+              </Button>
+              {!canSuggestTujuan && (
+                <p className="mt-1 text-xs text-muted-foreground">Isi/Pilih Topik Pembelajaran terlebih dahulu.</p>
+              )}
+            </div>
+            {tujuanSuggestions.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {suggestions.tujuan.map((item, i) => (
+                {tujuanSuggestions.map((item, i) => (
                   <button
                     key={i}
                     type="button"
@@ -310,25 +469,7 @@ function SoalPage() {
             )}
           </Field>
 
-          {/* Suggest button */}
-          <div className="sm:col-span-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!canSuggest || suggesting}
-              onClick={handleSuggest}
-              className="gap-1.5"
-            >
-              {suggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
-              {suggesting ? "Memuat rekomendasi…" : "Rekomendasikan Topik & Tujuan"}
-            </Button>
-            {!canSuggest && (
-              <p className="mt-1 text-xs text-muted-foreground">Isi Mata Pelajaran dan Kelas terlebih dahulu.</p>
-            )}
-          </div>
-
-          {/* Row 7: Sumber Referensi */}
+          {/* Row 8: Sumber Referensi */}
           <Field label="Sumber Referensi" className="sm:col-span-2">
             <Textarea
               rows={2}
@@ -338,7 +479,17 @@ function SoalPage() {
             />
           </Field>
 
-          {/* Row 8: Tipe Soal (Taksonomi) */}
+          <Field label="Petunjuk Pengerjaan" className="sm:col-span-2">
+            <Textarea
+              rows={5}
+              value={form.petunjukPengerjaan}
+              onChange={(e) => setForm({ ...form, petunjukPengerjaan: e.target.value })}
+              placeholder="Satu baris untuk satu poin petunjuk"
+            />
+            <p className="text-xs text-muted-foreground">Isi satu baris per poin agar format dokumen rapi.</p>
+          </Field>
+
+          {/* Row 9: Tipe Soal (Taksonomi) */}
           <Field label="Tipe Soal (Taksonomi)">
             <div className="flex flex-wrap gap-1.5">
               {TIPE_SOAL.map((item) => {
@@ -364,7 +515,7 @@ function SoalPage() {
             <p className="text-xs text-muted-foreground">Bisa pilih lebih dari satu taksonomi.</p>
           </Field>
 
-          {/* Row 9: Format Soal */}
+          {/* Row 10: Format Soal */}
           <Field label="Format Soal *">
             <Select value={form.formatSoal} onValueChange={(v) => setForm({ ...form, formatSoal: v as any })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -392,7 +543,7 @@ function SoalPage() {
             </Field>
           )}
 
-          {/* Row 10: Tingkat Kesulitan */}
+          {/* Row 11: Tingkat Kesulitan */}
           <Field label="Tingkat Kesulitan">
             <Select value={form.tingkat} onValueChange={(v) => setForm({ ...form, tingkat: v as any })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -404,7 +555,7 @@ function SoalPage() {
             </Select>
           </Field>
 
-          {/* Row 11: Tambahkan Ilustrasi */}
+          {/* Row 12: Tambahkan Ilustrasi */}
           <div className="flex items-center gap-2 sm:col-span-2">
             <Checkbox
               id="ilustrasi"

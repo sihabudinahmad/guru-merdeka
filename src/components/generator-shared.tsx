@@ -314,8 +314,8 @@ function SoalView({ c }: { c: any }) {
   return (
     <div className="space-y-3">
       <Section title="Informasi">
-        <p><b>{c.judul}</b></p>
-        <div className="space-y-1 text-sm">
+        <p className="text-center"><b>{c.judul}</b></p>
+        <div className="space-y-1 text-sm text-center">
           {c.jenisUjian && <p><b>Jenis Ujian:</b> {c.jenisUjian}</p>}
           {c.fase && <p><b>Fase:</b> {c.fase}</p>}
           <p><b>Kelas:</b> {c.kelas}</p>
@@ -326,8 +326,6 @@ function SoalView({ c }: { c: any }) {
           {c.tujuanPembelajaran && <p><b>Tujuan Pembelajaran:</b> {c.tujuanPembelajaran}</p>}
           {c.sumberReferensi && <p><b>Sumber Referensi:</b> {c.sumberReferensi}</p>}
           {c.tipeSoal && <p><b>Tipe Soal (Taksonomi):</b> {c.tipeSoal}</p>}
-          {c.formatSoal && <p><b>Format:</b> {c.formatSoal}</p>}
-          {c.tingkatKesulitan && <p><b>Tingkat Kesulitan:</b> {c.tingkatKesulitan}</p>}
           {c.tambahkanIlustrasi && <p><b>Ilustrasi:</b> Disertakan</p>}
         </div>
       </Section>
@@ -341,10 +339,10 @@ function SoalView({ c }: { c: any }) {
 
         <TabsContent value="soal" className="mt-3">
           <Section title={`Soal (${c.soal?.length ?? 0})`}>
-            <ol className="space-y-3 pl-5">
+            <ol className="list-decimal space-y-3 pl-5">
               {Array.isArray(c.soal) ? (
-                c.soal.map((s: any) => (
-                  <li key={s.nomor} className="space-y-1">
+                c.soal.map((s: any, i: number) => (
+                  <li key={s.nomor ?? i} className="list-item space-y-1">
                     <p className="font-medium">{s.pertanyaan}</p>
                     {((s.format ?? s.tipe) === "pg") && Array.isArray(s.opsi) && s.opsi.length > 0 && (
                       <ul className="space-y-0.5 pl-4 text-sm">
@@ -425,15 +423,12 @@ function SoalView({ c }: { c: any }) {
           <Section title="Kunci Jawaban & Pembahasan">
             <ol className="space-y-3 pl-5">
               {Array.isArray(c.soal) ? (
-                c.soal.map((s: any) => (
-                  <li key={s.nomor} className="space-y-1">
-                    <p className="font-medium">Soal {s.nomor}</p>
+                c.soal.map((s: any, i: number) => (
+                  <li key={s.nomor ?? i} className="space-y-1">
+                    <p className="font-medium">Soal {s.nomor ?? i + 1}</p>
                     <p className="text-sm"><b>Kunci Jawaban:</b> {s.kunciJawaban}</p>
                     <p className="text-sm"><b>Pembahasan:</b> {s.pembahasan ?? "-"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.c_level && `Taksonomi: ${s.c_level} · `}
-                      Tingkat: {s.tingkat?.toUpperCase()}
-                    </p>
+                    {s.c_level && <p className="text-xs text-muted-foreground">Taksonomi: {s.c_level}</p>}
                   </li>
                 ))
               ) : (

@@ -40,6 +40,10 @@ const RppInput = z.object({
 
 const SoalInput = z.object({
   jenisUjian: z.string().max(80).optional().default(""),
+  headerBaris1: z.string().max(120).optional().default(""),
+  headerBaris2: z.string().max(120).optional().default(""),
+  tahunPelajaran: z.string().max(20).optional().default(""),
+  hariTanggalUjian: z.string().max(80).optional().default(""),
   fase: z.string().max(40).optional().default(""),
   kelas: z.string().min(1).max(40),
   mataPelajaran: z.string().min(1).max(80),
@@ -55,6 +59,7 @@ const SoalInput = z.object({
   jumlahPilihanPg: z.number().int().min(3).max(5).optional().default(4),
   tingkat: z.enum(["hots", "lots", "campuran"]),
   tambahkanIlustrasi: z.boolean().optional().default(false),
+  petunjukPengerjaan: z.union([z.string().max(3000), z.array(z.string().max(300))]).optional(),
 });
 
 const RkpInput = z.object({
@@ -210,6 +215,10 @@ const SOAL_SCHEMA = {
     properties: {
       judul: { type: "string" },
       jenisUjian: { type: "string" },
+      headerBaris1: { type: "string" },
+      headerBaris2: { type: "string" },
+      tahunPelajaran: { type: "string" },
+      hariTanggalUjian: { type: "string" },
       fase: { type: "string" },
       mataPelajaran: { type: "string" },
       kelas: { type: "string" },
@@ -222,6 +231,10 @@ const SOAL_SCHEMA = {
       formatSoal: { type: "string" },
       tingkatKesulitan: { type: "string" },
       tambahkanIlustrasi: { type: "boolean" },
+      petunjukPengerjaan: {
+        type: "array",
+        items: { type: "string" },
+      },
       kisiKisi: {
         type: "array",
         items: {
@@ -358,6 +371,36 @@ function normalizeSoalContent(content: Json): Json {
   return normalized as Json;
 }
 
+function normalizePetunjukPayload(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((x) => String(x).trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/\n+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function enrichSoalMetadata(content: Json, payload: z.infer<typeof SoalInput>): Json {
+  if (!content || typeof content !== "object" || Array.isArray(content)) return content;
+  const normalized = { ...(content as Record<string, any>) };
+  const petunjuk = normalizePetunjukPayload(payload.petunjukPengerjaan);
+
+  normalized.jenisUjian = normalized.jenisUjian ?? payload.jenisUjian;
+  normalized.headerBaris1 = payload.headerBaris1 || normalized.headerBaris1 || payload.jenisUjian || "Sumatif Lingkup Materi";
+  normalized.headerBaris2 = payload.headerBaris2 || normalized.headerBaris2 || `TAHUN PELAJARAN ${payload.tahunPelajaran || "20.../20..."}`;
+  normalized.tahunPelajaran = payload.tahunPelajaran || normalized.tahunPelajaran || "";
+  normalized.hariTanggalUjian = payload.hariTanggalUjian || normalized.hariTanggalUjian || "";
+  normalized.petunjukPengerjaan = petunjuk.length > 0
+    ? petunjuk
+    : normalizePetunjukPayload(normalized.petunjukPengerjaan);
+
+  return normalized as Json;
+}
+
 const RKP_SCHEMA = {
   name: "tulis_rkp",
   description: "Menyusun RKP harian PAUD/TK.",
@@ -420,15 +463,22 @@ Sertakan minimal 3 tujuan pembelajaran terukur, langkah pembelajaran yang sangat
 - Mata Pelajaran: ${p.mataPelajaran}
 - Kelas: ${p.kelas}
 ${p.fase ? `- Fase: ${p.fase}` : ""}
+    ${p.jenisUjian ? `- Jenis Ujian: ${p.jenisUjian}` : ""}
+    ${p.headerBaris1 ? `- Header Baris 1: ${p.headerBaris1}` : ""}
+    ${p.headerBaris2 ? `- Header Baris 2: ${p.headerBaris2}` : ""}
+    ${p.tahunPelajaran ? `- Tahun Pelajaran: ${p.tahunPelajaran}` : ""}
+    ${p.hariTanggalUjian ? `- Hari/Tanggal Ujian: ${p.hariTanggalUjian}` : ""}
 ${p.topik ? `- Topik: ${p.topik}` : ""}
 ${p.tujuanPembelajaran ? `- Tujuan Pembelajaran: ${p.tujuanPembelajaran}` : ""}
 ${p.tipeSoal ? `- Taksonomi: ${p.tipeSoal}` : ""}
 ${p.waktu ? `- Waktu: ${p.waktu}` : ""}
 ${p.sumberReferensi ? `- Referensi: ${p.sumberReferensi}` : ""}
+    ${p.petunjukPengerjaan ? `- Petunjuk Pengerjaan:\n${normalizePetunjukPayload(p.petunjukPengerjaan).map((x, i) => `  ${i + 1}. ${x}`).join("\n")}` : ""}
 ${p.formatSoal === "pg" ? `- Jumlah opsi jawaban PG: ${p.jumlahPilihanPg} (gunakan ${p.jumlahPilihanPg === 3 ? "A-C" : p.jumlahPilihanPg === 4 ? "A-D" : "A-E"})` : ""}
 ${p.tambahkanIlustrasi ? "- Ilustrasi BOLEH ditambahkan HANYA pada soal yang memerlukan gambar/diagram (misalnya bangun ruang, grafik, peta). Jika soal memerlukan ilustrasi, isi field \"ilustrasi\" dengan kode SVG inline yang valid dan sederhana (dimulai dengan <svg xmlns=\"http://www.w3.org/2000/svg\"). Untuk soal teks biasa, kosongkan field ilustrasi." : "- Jangan isi field ilustrasi pada soal manapun."}
 WAJIB sertakan field "kisiKisi" sebagai array dan isi untuk semua soal.
 Setiap item kisi-kisi harus memiliki: nomor, kompetensiDasar, indikator, materi, tingkatKognitif, bentukSoal, dan nomorSoal.
+    Sertakan juga metadata dokumen: "headerBaris1", "headerBaris2", "tahunPelajaran", "hariTanggalUjian", dan "petunjukPengerjaan" (array string).
 Pastikan jawaban akurat, pembahasan jelas, dan sesuai dengan tingkat kesulitan yang diminta.
 Jika format soal adalah "pg", setiap soal WAJIB memiliki tepat ${p.jumlahPilihanPg} opsi jawaban dalam field "opsi" berupa array string dan tidak boleh kosong.
 Setiap item pada field "opsi" hanya boleh berisi isi jawaban, tanpa awalan label seperti A., B., C., atau D. karena label akan dibuat otomatis oleh aplikasi.
@@ -527,10 +577,12 @@ export const generateDocument = createServerFn({ method: "POST" })
     }
 
     if (data.type === "soal") {
+      const soalInput = SoalInput.parse(data.payload);
       if (Array.isArray(parsed)) {
         parsed = { soal: parsed } as Json;
       }
       parsed = normalizeSoalContent(parsed);
+      parsed = enrichSoalMetadata(parsed, soalInput);
     }
 
     const title = deriveTitle(data.type, data.payload);
@@ -601,6 +653,15 @@ const SuggestSoalInput = z.object({
   tipeSoal: z.string().max(200).optional().default(""),
 });
 
+const SuggestSoalTujuanInput = z.object({
+  token: z.string().min(16).max(256),
+  mataPelajaran: z.string().min(1).max(80),
+  kelas: z.string().min(1).max(40),
+  fase: z.string().max(20).optional().default(""),
+  tipeSoal: z.string().max(200).optional().default(""),
+  topik: z.string().min(1).max(500),
+});
+
 const SUGGEST_SCHEMA = {
   name: "suggest_rpp_content",
   description: "Memberikan rekomendasi materi pokok dan tujuan pembelajaran.",
@@ -624,8 +685,8 @@ const SUGGEST_SCHEMA = {
 };
 
 const SUGGEST_SOAL_SCHEMA = {
-  name: "suggest_soal_content",
-  description: "Memberikan rekomendasi topik pembelajaran dan tujuan pembelajaran untuk soal.",
+  name: "suggest_soal_topik",
+  description: "Memberikan rekomendasi topik pembelajaran untuk soal.",
   parameters: {
     type: "object",
     properties: {
@@ -634,13 +695,25 @@ const SUGGEST_SOAL_SCHEMA = {
         items: { type: "string" },
         description: "3-5 rekomendasi topik pembelajaran yang relevan",
       },
+    },
+    required: ["topik"],
+    additionalProperties: false,
+  },
+};
+
+const SUGGEST_SOAL_TUJUAN_SCHEMA = {
+  name: "suggest_soal_tujuan",
+  description: "Memberikan rekomendasi tujuan pembelajaran untuk topik tertentu.",
+  parameters: {
+    type: "object",
+    properties: {
       tujuan: {
         type: "array",
         items: { type: "string" },
-        description: "3-5 rekomendasi tujuan pembelajaran yang terukur sesuai taksonomi Bloom",
+        description: "3-5 rekomendasi tujuan pembelajaran yang terukur sesuai topik dan taksonomi Bloom",
       },
     },
-    required: ["topik", "tujuan"],
+    required: ["tujuan"],
     additionalProperties: false,
   },
 };
@@ -726,15 +799,15 @@ export const suggestSoalContent = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Berikan rekomendasi topik pembelajaran dan tujuan pembelajaran yang relevan, konkret, dan terukur sesuai taksonomi Bloom.",
+              "Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Berikan rekomendasi topik pembelajaran yang relevan, konkret, dan siap dipakai sebagai dasar penyusunan tujuan pembelajaran.",
           },
           {
             role: "user",
-            content: `Berikan rekomendasi untuk:\n- Mata Pelajaran: ${data.mataPelajaran}\n- Kelas: ${data.kelas}${data.fase ? ` (Fase ${data.fase})` : ""}${data.tipeSoal ? `\n- Taksonomi: ${data.tipeSoal}` : ""}\n\nBerikan 3-5 topik pembelajaran yang sesuai dan 3-5 tujuan pembelajaran yang terukur.`,
+            content: `Berikan rekomendasi untuk:\n- Mata Pelajaran: ${data.mataPelajaran}\n- Kelas: ${data.kelas}${data.fase ? ` (Fase ${data.fase})` : ""}${data.tipeSoal ? `\n- Taksonomi: ${data.tipeSoal}` : ""}\n\nBerikan 3-5 topik pembelajaran yang sesuai.`,
           },
         ],
         tools: [{ type: "function", function: SUGGEST_SOAL_SCHEMA }],
-        tool_choice: { type: "function", function: { name: "suggest_soal_content" } },
+        tool_choice: { type: "function", function: { name: "suggest_soal_topik" } },
       }),
     });
 
@@ -752,8 +825,65 @@ export const suggestSoalContent = createServerFn({ method: "POST" })
     }
 
     try {
-      const parsed = JSON.parse(toolCall.function.arguments) as { topik: string[]; tujuan: string[] };
-      return { ok: true as const, topik: parsed.topik, tujuan: parsed.tujuan };
+      const parsed = JSON.parse(toolCall.function.arguments) as { topik: string[] };
+      return { ok: true as const, topik: parsed.topik };
+    } catch {
+      return { ok: false as const, error: "Gagal mengurai hasil AI." };
+    }
+  });
+
+export const suggestSoalTujuan = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => SuggestSoalTujuanInput.parse(d))
+  .handler(async ({ data }) => {
+    const sess = await getCodeIdFromToken(data.token);
+    if (!sess) return { ok: false as const, error: "Sesi tidak valid." };
+
+    const { url, apiKey, model, isEnabled } = await getAiRuntimeConfig();
+    if (!isEnabled) {
+      return { ok: false as const, error: "Layanan AI sedang dinonaktifkan oleh admin." };
+    }
+    if (!apiKey) return { ok: false as const, error: "AI Gateway belum dikonfigurasi." };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Berikan rekomendasi tujuan pembelajaran yang terukur, relevan, dan langsung sesuai topik yang diberikan.",
+          },
+          {
+            role: "user",
+            content: `Berikan rekomendasi untuk:\n- Mata Pelajaran: ${data.mataPelajaran}\n- Kelas: ${data.kelas}${data.fase ? ` (Fase ${data.fase})` : ""}\n- Topik Terpilih: ${data.topik}${data.tipeSoal ? `\n- Taksonomi: ${data.tipeSoal}` : ""}\n\nBerikan 3-5 tujuan pembelajaran yang terukur dan selaras langsung dengan topik tersebut.`,
+          },
+        ],
+        tools: [{ type: "function", function: SUGGEST_SOAL_TUJUAN_SCHEMA }],
+        tool_choice: { type: "function", function: { name: "suggest_soal_tujuan" } },
+      }),
+    });
+
+    if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan." };
+    if (res.status === 402) return { ok: false as const, error: "Kredit AI habis." };
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { ok: false as const, error: `Gagal menghubungi AI (${res.status}): ${text}` };
+    }
+
+    const json = await res.json();
+    const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      return { ok: false as const, error: "AI tidak mengembalikan hasil." };
+    }
+
+    try {
+      const parsed = JSON.parse(toolCall.function.arguments) as { tujuan: string[] };
+      return { ok: true as const, tujuan: parsed.tujuan };
     } catch {
       return { ok: false as const, error: "Gagal mengurai hasil AI." };
     }

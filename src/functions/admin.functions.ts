@@ -129,6 +129,81 @@ export const createAccessCode = createServerFn({ method: "POST" })
     return { ok: true as const, item: row };
   });
 
+const CreateBulkInput = z.object({
+  count: z.number().int().min(1).max(200),
+  label: z.string().trim().max(120).optional().default(""),
+  max_devices: z.number().int().min(1).max(20).default(2),
+  expires_at: z.string().datetime().optional().nullable(),
+});
+
+export const createAccessCodesBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CreateBulkInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+
+    const requiredCount = data.count;
+    const finalCodes: string[] = [];
+    const seen = new Set<string>();
+    let attempts = 0;
+
+    while (finalCodes.length < requiredCount && attempts < 10) {
+      const draftCount = Math.max((requiredCount - finalCodes.length) * 3, 20);
+      const draft = new Set<string>();
+
+      while (draft.size < draftCount) {
+        const code = randomCode();
+        if (!seen.has(code)) {
+          seen.add(code);
+          draft.add(code);
+        }
+      }
+
+      const draftList = Array.from(draft);
+      const { data: existing, error: existingErr } = await supabaseAdmin
+        .from("access_codes")
+        .select("code")
+        .in("code", draftList);
+
+      if (existingErr) {
+        return { ok: false as const, error: "Gagal memvalidasi kode unik." };
+      }
+
+      const existingSet = new Set((existing ?? []).map((row) => row.code));
+      for (const code of draftList) {
+        if (!existingSet.has(code)) {
+          finalCodes.push(code);
+          if (finalCodes.length >= requiredCount) break;
+        }
+      }
+
+      attempts += 1;
+    }
+
+    if (finalCodes.length < requiredCount) {
+      return { ok: false as const, error: "Gagal menghasilkan kode unik. Coba lagi." };
+    }
+
+    const payload = finalCodes.map((code) => ({
+      code,
+      label: data.label || null,
+      max_devices: data.max_devices,
+      expires_at: data.expires_at ?? null,
+      is_active: true,
+    }));
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("access_codes")
+      .insert(payload)
+      .select("id, code, label, max_devices, expires_at, is_active, created_at");
+
+    if (error) {
+      return { ok: false as const, error: "Gagal membuat kode massal." };
+    }
+
+    return { ok: true as const, count: rows?.length ?? 0, items: rows ?? [] };
+  });
+
 // ---------------- Toggle active ----------------
 const ToggleInput = z.object({ id: z.string().uuid(), is_active: z.boolean() });
 export const setAccessCodeActive = createServerFn({ method: "POST" })
