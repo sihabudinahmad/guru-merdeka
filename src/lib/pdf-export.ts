@@ -122,6 +122,31 @@ class PdfWriter {
   }
 }
 
+function cleanOptionLabel(option: string) {
+  return option.replace(/^\s*[A-Ea-e][\.)\-:]\s*/, "").trim();
+}
+
+function getKisiKisiRows(c: any) {
+  if (Array.isArray(c.kisiKisi) && c.kisiKisi.length > 0) return c.kisiKisi;
+  if (Array.isArray(c.kisi_kisi) && c.kisi_kisi.length > 0) return c.kisi_kisi;
+  if (!Array.isArray(c.soal) || c.soal.length === 0) return [];
+
+  const tujuan = typeof c.tujuanPembelajaran === "string" && c.tujuanPembelajaran.trim()
+    ? c.tujuanPembelajaran.trim()
+    : `Peserta didik memahami materi ${c.topik ?? c.mataPelajaran ?? "pembelajaran"}`;
+  const materi = c.topik ?? c.materi ?? c.mataPelajaran ?? "-";
+
+  return c.soal.map((s: any, index: number) => ({
+    nomor: index + 1,
+    kompetensiDasar: tujuan,
+    indikator: `Peserta didik dapat menjawab soal nomor ${s.nomor ?? index + 1} dengan benar sesuai materi yang diujikan.`,
+    materi,
+    tingkatKognitif: s.c_level ?? "C2",
+    bentukSoal: s.format ?? s.tipe ?? "Soal",
+    nomorSoal: String(s.nomor ?? index + 1),
+  }));
+}
+
 function rppPdf(c: any, w: PdfWriter) {
   w.title("PERENCANAAN PELAKSANAAN PEMBELAJARAN");
 
@@ -253,26 +278,80 @@ function rppPdf(c: any, w: PdfWriter) {
 }
 
 function soalPdf(c: any, w: PdfWriter) {
+  const kisiKisiRows = getKisiKisiRows(c);
   w.title(c.judul ?? "Lembar Soal");
+  
+  // Informasi umum
+  if (c.jenisUjian) w.kv("Jenis Ujian", c.jenisUjian);
+  if (c.fase) w.kv("Fase", c.fase);
   w.kv("Mata Pelajaran", c.mataPelajaran ?? "-");
   w.kv("Kelas", c.kelas ?? "-");
-  w.kv("Materi", c.materi ?? "-");
+  if (c.semester) w.kv("Semester", c.semester);
+  if (c.waktu) w.kv("Waktu", c.waktu);
+  if (c.topik) w.kv("Topik", c.topik);
+  if (c.tujuanPembelajaran) w.kv("Tujuan Pembelajaran", c.tujuanPembelajaran);
 
   w.h2("Soal");
   (c.soal ?? []).forEach((s: any) => {
     w.p(`${s.nomor}. ${s.pertanyaan}`);
-    if (s.tipe === "pg" && Array.isArray(s.opsi)) {
+    if ((s.format === "pg" || s.tipe === "pg") && Array.isArray(s.opsi)) {
       s.opsi.forEach((opt: string, i: number) => {
         const letter = String.fromCharCode(65 + i);
-        w.p(`   ${letter}. ${opt}`);
+        w.p(`   ${letter}. ${cleanOptionLabel(opt)}`);
       });
+    } else if (s.format === "pgkompleks" && Array.isArray(s.opsi)) {
+      s.opsi.forEach((opt: string, i: number) => {
+        const letter = String.fromCharCode(65 + i);
+        w.p(`   ${letter}. ${cleanOptionLabel(opt)}`);
+      });
+    } else if (s.format === "menjodohkan" && Array.isArray(s.pasangan)) {
+      s.pasangan.forEach((pair: any, i: number) => {
+        w.p(`   ${i + 1}. ${pair.kiri} → ${pair.kanan}`);
+      });
+    } else if (s.format === "benarSalah") {
+      w.p("   Benar / Salah");
+    }
+    if (s.ilustrasi) {
+      {
+        const iluText = s.ilustrasi.trimStart().startsWith("<svg")
+          ? "[Lihat ilustrasi pada pratinjau web]"
+          : `[Ilustrasi: ${s.ilustrasi}]`;
+        w.p(`   ${iluText}`);
+      }
     }
   });
 
-  w.h2("Kunci Jawaban & Pembahasan");
+  // New page for Kisi-kisi
+  w.doc.addPage();
+  w.y = w.marginTop;
+  w.title("KISI-KISI SOAL");
+  
+  if (kisiKisiRows.length > 0) {
+    kisiKisiRows.forEach((kisi: any, idx: number) => {
+      w.h3(`${idx + 1}.`);
+      w.kv("Kompetensi Dasar", kisi.kompetensiDasar ?? "-");
+      w.kv("Indikator", kisi.indikator ?? "-");
+      w.kv("Materi", kisi.materi ?? "-");
+      w.kv("Tingkat Kognitif", kisi.tingkatKognitif ?? "-");
+      w.kv("Bentuk Soal", kisi.bentukSoal ?? "-");
+      w.kv("No. Soal", kisi.nomorSoal ?? "-");
+      w.y += 6;
+    });
+  } else {
+    w.p("Kisi-kisi tidak tersedia.");
+  }
+
+  // New page for Kunci Jawaban
+  w.doc.addPage();
+  w.y = w.marginTop;
+  w.title("KUNCI JAWABAN & PEMBAHASAN");
+  
   (c.soal ?? []).forEach((s: any) => {
     w.kv(`${s.nomor}. Jawaban`, String(s.kunciJawaban ?? "-"));
     w.kv("    Pembahasan", String(s.pembahasan ?? "-"));
+    if (s.c_level) w.kv("    Taksonomi", s.c_level);
+    if (s.tingkat) w.kv("    Tingkat", s.tingkat.toUpperCase());
+    w.y += 4;
   });
 }
 

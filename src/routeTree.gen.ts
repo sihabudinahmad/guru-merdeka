@@ -21,6 +21,7 @@ import { Route as AppRkpRouteImport } from './routes/app.rkp'
 import { Route as AppRiwayatRouteImport } from './routes/app.riwayat'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminClaimRouteImport } from './routes/admin.claim'
+import { Route as AppRiwayatIndexRouteImport } from './routes/app.riwayat.index'
 import { Route as AppRiwayatIdRouteImport } from './routes/app.riwayat.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -83,6 +84,11 @@ const AdminClaimRoute = AdminClaimRouteImport.update({
   path: '/claim',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppRiwayatIndexRoute = AppRiwayatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRiwayatRoute,
+} as any)
 const AppRiwayatIdRoute = AppRiwayatIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -103,19 +109,20 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
+  '/app/riwayat/': typeof AppRiwayatIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/claim': typeof AdminClaimRoute
   '/admin/login': typeof AdminLoginRoute
-  '/app/riwayat': typeof AppRiwayatRouteWithChildren
   '/app/rkp': typeof AppRkpRoute
   '/app/rpp': typeof AppRppRoute
   '/app/soal': typeof AppSoalRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
+  '/app/riwayat': typeof AppRiwayatIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +139,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/riwayat/$id': typeof AppRiwayatIdRoute
+  '/app/riwayat/': typeof AppRiwayatIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -149,19 +157,20 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
+    | '/app/riwayat/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/admin/claim'
     | '/admin/login'
-    | '/app/riwayat'
     | '/app/rkp'
     | '/app/rpp'
     | '/app/soal'
     | '/admin'
     | '/app'
     | '/app/riwayat/$id'
+    | '/app/riwayat'
   id:
     | '__root__'
     | '/'
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/app/riwayat/$id'
+    | '/app/riwayat/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -272,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClaimRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/riwayat/': {
+      id: '/app/riwayat/'
+      path: '/'
+      fullPath: '/app/riwayat/'
+      preLoaderRoute: typeof AppRiwayatIndexRouteImport
+      parentRoute: typeof AppRiwayatRoute
+    }
     '/app/riwayat/$id': {
       id: '/app/riwayat/$id'
       path: '/$id'
@@ -298,10 +315,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRiwayatRouteChildren {
   AppRiwayatIdRoute: typeof AppRiwayatIdRoute
+  AppRiwayatIndexRoute: typeof AppRiwayatIndexRoute
 }
 
 const AppRiwayatRouteChildren: AppRiwayatRouteChildren = {
   AppRiwayatIdRoute: AppRiwayatIdRoute,
+  AppRiwayatIndexRoute: AppRiwayatIndexRoute,
 }
 
 const AppRiwayatRouteWithChildren = AppRiwayatRoute._addFileChildren(

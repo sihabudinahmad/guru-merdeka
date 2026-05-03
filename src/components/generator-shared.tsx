@@ -4,9 +4,10 @@ import { Loader2, Download, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { buildDocxBlob, downloadBlob } from "@/lib/docx-export";
 import { buildPdfBlob } from "@/lib/pdf-export";
-import { generateDocument } from "@/server/generate.functions";
+import { generateDocument } from "@/functions/generate.functions";
 import { getSession } from "@/lib/session";
 import { useNavigate } from "@tanstack/react-router";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type GenType = "rpp" | "soal" | "rkp";
 
@@ -125,6 +126,51 @@ function List({ items }: { items?: string[] }) {
       ))}
     </ul>
   );
+}
+
+function cleanOptionLabel(option: string) {
+  return option.replace(/^\s*[A-Ea-e][\.)\-:]\s*/, "").trim();
+}
+
+function IlustrasiView({ svg }: { svg: string }) {
+  const isSvg = svg.trimStart().startsWith("<svg");
+  if (isSvg) {
+    return (
+      <div
+        className="my-2 rounded-lg border border-border bg-white p-3 overflow-x-auto"
+        dangerouslySetInnerHTML={{ __html: svg }}
+        style={{ maxWidth: "100%" }}
+      />
+    );
+  }
+  // Fallback: plain text description
+  return (
+    <div className="my-2 flex items-start gap-2 rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground italic">
+      <span>🖼</span>
+      <span>{svg}</span>
+    </div>
+  );
+}
+
+function getKisiKisiRows(c: any) {
+  if (Array.isArray(c.kisiKisi) && c.kisiKisi.length > 0) return c.kisiKisi;
+  if (Array.isArray(c.kisi_kisi) && c.kisi_kisi.length > 0) return c.kisi_kisi;
+  if (!Array.isArray(c.soal) || c.soal.length === 0) return [];
+
+  const tujuan = typeof c.tujuanPembelajaran === "string" && c.tujuanPembelajaran.trim()
+    ? c.tujuanPembelajaran.trim()
+    : `Peserta didik memahami materi ${c.topik ?? c.mataPelajaran ?? "pembelajaran"}`;
+  const materi = c.topik ?? c.materi ?? c.mataPelajaran ?? "-";
+
+  return c.soal.map((s: any, index: number) => ({
+    nomor: index + 1,
+    kompetensiDasar: tujuan,
+    indikator: `Peserta didik dapat menjawab soal nomor ${s.nomor ?? index + 1} dengan benar sesuai materi yang diujikan.`,
+    materi,
+    tingkatKognitif: s.c_level ?? "C2",
+    bentukSoal: s.format ?? s.tipe ?? "Soal",
+    nomorSoal: String(s.nomor ?? index + 1),
+  }));
 }
 
 function RppView({ c }: { c: any }) {
@@ -263,37 +309,140 @@ function RppView({ c }: { c: any }) {
 }
 
 function SoalView({ c }: { c: any }) {
+  const kisiKisiRows = getKisiKisiRows(c);
+
   return (
     <div className="space-y-3">
       <Section title="Informasi">
         <p><b>{c.judul}</b></p>
-        <p>{c.mataPelajaran} — {c.kelas}</p>
-        <p className="text-muted-foreground">Materi: {c.materi}</p>
+        <div className="space-y-1 text-sm">
+          {c.jenisUjian && <p><b>Jenis Ujian:</b> {c.jenisUjian}</p>}
+          {c.fase && <p><b>Fase:</b> {c.fase}</p>}
+          <p><b>Kelas:</b> {c.kelas}</p>
+          <p><b>Mata Pelajaran:</b> {c.mataPelajaran}</p>
+          {c.semester && <p><b>Semester:</b> {c.semester}</p>}
+          {c.waktu && <p><b>Alokasi Waktu:</b> {c.waktu}</p>}
+          {c.topik && <p><b>Topik:</b> {c.topik}</p>}
+          {c.tujuanPembelajaran && <p><b>Tujuan Pembelajaran:</b> {c.tujuanPembelajaran}</p>}
+          {c.sumberReferensi && <p><b>Sumber Referensi:</b> {c.sumberReferensi}</p>}
+          {c.tipeSoal && <p><b>Tipe Soal (Taksonomi):</b> {c.tipeSoal}</p>}
+          {c.formatSoal && <p><b>Format:</b> {c.formatSoal}</p>}
+          {c.tingkatKesulitan && <p><b>Tingkat Kesulitan:</b> {c.tingkatKesulitan}</p>}
+          {c.tambahkanIlustrasi && <p><b>Ilustrasi:</b> Disertakan</p>}
+        </div>
       </Section>
-      <Section title={`Soal (${c.soal?.length ?? 0})`}>
-        <ol className="space-y-3 pl-5">
-          {(c.soal ?? []).map((s: any) => (
-            <li key={s.nomor} className="space-y-1">
-              <p className="font-medium">{s.pertanyaan}</p>
-              {s.tipe === "pg" && Array.isArray(s.opsi) && (
-                <ul className="space-y-0.5 pl-4 text-sm">
-                  {s.opsi.map((opt: string, i: number) => (
-                    <li key={i}>{String.fromCharCode(65 + i)}. {opt}</li>
-                  ))}
-                </ul>
+
+      <Tabs defaultValue="soal" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="soal">Soal</TabsTrigger>
+          <TabsTrigger value="kisi-kisi">Kisi-kisi</TabsTrigger>
+          <TabsTrigger value="kunci">Kunci Jawaban</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="soal" className="mt-3">
+          <Section title={`Soal (${c.soal?.length ?? 0})`}>
+            <ol className="space-y-3 pl-5">
+              {Array.isArray(c.soal) ? (
+                c.soal.map((s: any) => (
+                  <li key={s.nomor} className="space-y-1">
+                    <p className="font-medium">{s.pertanyaan}</p>
+                    {((s.format ?? s.tipe) === "pg") && Array.isArray(s.opsi) && s.opsi.length > 0 && (
+                      <ul className="space-y-0.5 pl-4 text-sm">
+                        {s.opsi.map((opt: string, i: number) => (
+                          <li key={i}>{String.fromCharCode(65 + i)}. {cleanOptionLabel(opt)}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {((s.format ?? s.tipe) === "pgkompleks") && Array.isArray(s.opsi) && s.opsi.length > 0 && (
+                      <div className="pl-4 text-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Pilihan Ganda Kompleks:</p>
+                        <ul className="space-y-0.5">
+                          {s.opsi.map((opt: string, i: number) => (
+                            <li key={i}>{String.fromCharCode(65 + i)}. {cleanOptionLabel(opt)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {((s.format ?? s.tipe) === "menjodohkan") && Array.isArray(s.pasangan) && (
+                      <div className="pl-4 text-sm space-y-1">
+                        <p className="text-xs text-muted-foreground">Menjodohkan:</p>
+                        {s.pasangan.map((p: any, i: number) => (
+                          <div key={i} className="flex gap-2">
+                            <span>{i + 1}.</span>
+                            <span>{p.kiri} → {p.kanan}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {s.ilustrasi && <IlustrasiView svg={s.ilustrasi} />}
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-muted-foreground">Tidak ada soal yang dihasilkan. Periksa AI response.</li>
               )}
-              <p className="text-xs text-muted-foreground">
-                Tingkat: {s.tingkat} · Tipe: {s.tipe.toUpperCase()}
-              </p>
-              <details className="text-sm">
-                <summary className="cursor-pointer text-primary">Kunci & Pembahasan</summary>
-                <p className="mt-1"><b>Jawaban:</b> {s.kunciJawaban}</p>
-                <p><b>Pembahasan:</b> {s.pembahasan}</p>
-              </details>
-            </li>
-          ))}
-        </ol>
-      </Section>
+            </ol>
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="kisi-kisi" className="mt-3">
+          <Section title="Kisi-kisi Soal">
+            {kisiKisiRows.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-border">
+                      <th className="p-2 text-left font-semibold">No</th>
+                      <th className="p-2 text-left font-semibold">Kompetensi Dasar</th>
+                      <th className="p-2 text-left font-semibold">Indikator</th>
+                      <th className="p-2 text-left font-semibold">Materi</th>
+                      <th className="p-2 text-left font-semibold">Tingkat Kognitif</th>
+                      <th className="p-2 text-left font-semibold">Bentuk Soal</th>
+                      <th className="p-2 text-left font-semibold">No. Soal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kisiKisiRows.map((kisi: any, i: number) => (
+                      <tr key={i} className="border-b border-border hover:bg-muted/50">
+                        <td className="p-2">{kisi.nomor}</td>
+                        <td className="p-2">{kisi.kompetensiDasar}</td>
+                        <td className="p-2">{kisi.indikator}</td>
+                        <td className="p-2">{kisi.materi}</td>
+                        <td className="p-2">{kisi.tingkatKognitif}</td>
+                        <td className="p-2">{kisi.bentukSoal}</td>
+                        <td className="p-2">{kisi.nomorSoal}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Kisi-kisi tidak tersedia atau belum dihasilkan.</p>
+            )}
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="kunci" className="mt-3">
+          <Section title="Kunci Jawaban & Pembahasan">
+            <ol className="space-y-3 pl-5">
+              {Array.isArray(c.soal) ? (
+                c.soal.map((s: any) => (
+                  <li key={s.nomor} className="space-y-1">
+                    <p className="font-medium">Soal {s.nomor}</p>
+                    <p className="text-sm"><b>Kunci Jawaban:</b> {s.kunciJawaban}</p>
+                    <p className="text-sm"><b>Pembahasan:</b> {s.pembahasan ?? "-"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.c_level && `Taksonomi: ${s.c_level} · `}
+                      Tingkat: {s.tingkat?.toUpperCase()}
+                    </p>
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-muted-foreground">Tidak ada kunci jawaban.</li>
+              )}
+            </ol>
+          </Section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

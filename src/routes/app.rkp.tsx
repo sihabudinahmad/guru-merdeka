@@ -37,39 +37,48 @@ function RkpPage() {
         </p>
       </header>
 
-      <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:grid-cols-2">
-        <Field label="Tema *">
-          <Input value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })} placeholder="Lingkunganku" />
-        </Field>
-        <Field label="Sub-tema *">
-          <Input value={form.subTema} onChange={(e) => setForm({ ...form, subTema: e.target.value })} placeholder="Keluargaku" />
-        </Field>
-        <Field label="Usia (tahun)">
-          <Input value={form.usia} onChange={(e) => setForm({ ...form, usia: e.target.value })} placeholder="5" />
-        </Field>
-        <Field label="Hari">
-          <Input value={form.hari} onChange={(e) => setForm({ ...form, hari: e.target.value })} placeholder="Senin" />
-        </Field>
-        <Field label="Alokasi Waktu" className="sm:col-span-2">
-          <Input value={form.alokasiWaktu} onChange={(e) => setForm({ ...form, alokasiWaktu: e.target.value })} />
-        </Field>
-        <Field label="Fokus / Kegiatan Utama (opsional)" className="sm:col-span-2">
-          <Textarea
-            rows={3}
-            value={form.fokus}
-            onChange={(e) => setForm({ ...form, fokus: e.target.value })}
-            placeholder="Mengenal anggota keluarga melalui kegiatan menggambar dan bercerita."
-          />
-        </Field>
-        <div className="sm:col-span-2">
-          <Button type="submit" className="h-11 w-full sm:w-auto" disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Buat RKP
-          </Button>
-        </div>
-      </form>
+      <div className="grid items-start gap-6 xl:grid-cols-12">
+        <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:grid-cols-2 xl:col-span-5">
+          <Field label="Tema *">
+            <Input value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })} placeholder="Lingkunganku" />
+          </Field>
+          <Field label="Sub-tema *">
+            <Input value={form.subTema} onChange={(e) => setForm({ ...form, subTema: e.target.value })} placeholder="Keluargaku" />
+          </Field>
+          <Field label="Usia (tahun)">
+            <Input value={form.usia} onChange={(e) => setForm({ ...form, usia: e.target.value })} placeholder="5" />
+          </Field>
+          <Field label="Hari">
+            <Input value={form.hari} onChange={(e) => setForm({ ...form, hari: e.target.value })} placeholder="Senin" />
+          </Field>
+          <Field label="Alokasi Waktu" className="sm:col-span-2">
+            <Input value={form.alokasiWaktu} onChange={(e) => setForm({ ...form, alokasiWaktu: e.target.value })} />
+          </Field>
+          <Field label="Fokus / Kegiatan Utama (opsional)" className="sm:col-span-2">
+            <Textarea
+              rows={3}
+              value={form.fokus}
+              onChange={(e) => setForm({ ...form, fokus: e.target.value })}
+              placeholder="Mengenal anggota keluarga melalui kegiatan menggambar dan bercerita."
+            />
+          </Field>
+          <div className="sm:col-span-2">
+            <Button type="submit" className="h-11 w-full sm:w-auto" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Buat RKP
+            </Button>
+          </div>
+        </form>
 
-      <ResultPanel loading={loading} type="rkp" title={result?.title ?? null} content={result?.content ?? null} />
+        <div className="xl:col-span-7">
+          <ResultPanel loading={loading} type="rkp" title={result?.title ?? null} content={result?.content ?? null} />
+          {!loading && !result && (
+            <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+              Preview hasil RKP akan muncul di sini.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { claimAdminRole } from "@/server/admin.functions";
+import { claimAdminRole } from "@/functions/admin.functions";
 import { callWithAuth } from "@/lib/admin-client";
 
 export const Route = createFileRoute("/admin/claim")({

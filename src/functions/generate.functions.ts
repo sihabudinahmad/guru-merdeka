@@ -107,14 +107,14 @@ const RPP_SCHEMA = {
       dimensiProfilLulusan: {
         type: "array",
         items: { type: "string" },
-        description: "Dimensi Profil Lulusan yang relevan, pilih dari: Keimanan dan Ketaqwaan Terhadap Tuhan YME, Kewargaan, Kreativitas, Kemandirian, Komunikasi, Kesehatan, Kolaborasi, Penalaran Kritis",
+        description: "Dimensi Profil Lulusan yang relevan",
       },
       desainPembelajaran: {
         type: "object",
         properties: {
-          capaianPembelajaran: { type: "string", description: "Capaian Pembelajaran sesuai Kurikulum Merdeka" },
-          lintasDisiplinIlmu: { type: "array", items: { type: "string" }, description: "Integrasi lintas disiplin ilmu" },
-          tujuanPembelajaran: { type: "array", items: { type: "string" }, description: "Tujuan pembelajaran yang terukur" },
+          capaianPembelajaran: { type: "string" },
+          lintasDisiplinIlmu: { type: "array", items: { type: "string" } },
+          tujuanPembelajaran: { type: "array", items: { type: "string" } },
           praktikPedagogis: {
             type: "object",
             properties: {
@@ -159,8 +159,8 @@ const RPP_SCHEMA = {
                 items: {
                   type: "object",
                   properties: {
-                    nama: { type: "string", description: "Nama tahapan, misal: Memahami, Mengaplikasi, Merefleksi" },
-                    label: { type: "string", description: "Label pendekatan, misal: Berkesadaran, Bermakna, Menggembirakan" },
+                    nama: { type: "string" },
+                    label: { type: "string" },
                     kegiatan: { type: "array", items: { type: "string" } },
                   },
                   required: ["nama", "kegiatan"],
@@ -182,9 +182,9 @@ const RPP_SCHEMA = {
       asesmen: {
         type: "object",
         properties: {
-          awal: { type: "string", description: "Asesmen awal (diagnostik)" },
-          proses: { type: "string", description: "Asesmen proses (formatif)" },
-          akhir: { type: "string", description: "Asesmen akhir (sumatif)" },
+          awal: { type: "string" },
+          proses: { type: "string" },
+          akhir: { type: "string" },
         },
         required: ["awal", "proses", "akhir"],
       },
@@ -204,37 +204,36 @@ const RPP_SCHEMA = {
 
 const SOAL_SCHEMA = {
   name: "tulis_soal",
-  description: "Membuat kumpulan soal latihan beserta kisi-kisi, kunci jawaban, dan pembahasan sesuai spesifikasi detail dan format Kurikulum Merdeka.",
+  description: "Membuat kumpulan soal latihan beserta kisi-kisi, kunci jawaban, dan pembahasan sesuai format Kurikulum Merdeka.",
   parameters: {
     type: "object",
     properties: {
       judul: { type: "string" },
-      jenisUjian: { type: "string", description: "Jenis ujian: ujian sekolah, asesmen sumatif akhir bab, asesmen sumatif tengah semester, asesmen sumatif akhir semester" },
-      fase: { type: "string", description: "Fase pembelajaran sesuai Kurikulum Merdeka" },
-      kelas: { type: "string" },
+      jenisUjian: { type: "string" },
+      fase: { type: "string" },
       mataPelajaran: { type: "string" },
-      semester: { type: "string", description: "Semester 1 atau Semester 2" },
-      waktu: { type: "string", description: "Alokasi waktu pengerjaan (60/90/120 menit atau lainnya)" },
-      topik: { type: "string", description: "Topik pembelajaran yang diujikan" },
-      tujuanPembelajaran: { type: "string", description: "Tujuan pembelajaran yang ingin dicapai" },
-      sumberReferensi: { type: "string", description: "Sumber referensi atau materi yang dijadikan acuan" },
-      tipeSoal: { type: "string", description: "Jenis taksonomi: C1 Mengingat, C2 Memahami, C3 Mengaplikasikan, C4 Menganalisis, C5 Mengevaluasi, C6 Mencipta" },
-      formatSoal: { type: "string", description: "Format soal: pilihan ganda, pilihan ganda kompleks, menjodohkan, benar salah, isisan singkat, uraian" },
-      tingkatKesulitan: { type: "string", description: "Tingkat kesulitan: HOTS (Higher Order Thinking Skills), LOTS (Lower Order Thinking Skills), atau campuran" },
-      tambahkanIlustrasi: { type: "boolean", description: "Tambahkan ilustrasi/gambar pada soal" },
+      kelas: { type: "string" },
+      semester: { type: "string" },
+      waktu: { type: "string" },
+      topik: { type: "string" },
+      tujuanPembelajaran: { type: "string" },
+      sumberReferensi: { type: "string" },
+      tipeSoal: { type: "string" },
+      formatSoal: { type: "string" },
+      tingkatKesulitan: { type: "string" },
+      tambahkanIlustrasi: { type: "boolean" },
       kisiKisi: {
         type: "array",
-        description: "Kisi-kisi soal yang menjelaskan pemetaan kompetensi dasar, indikator, materi, tingkat kognitif, dan bentuk soal",
         items: {
           type: "object",
           properties: {
-            nomor: { type: "number", description: "Nomor urut kisi-kisi" },
-            kompetensiDasar: { type: "string", description: "Kompetensi dasar yang diujikan sesuai Kurikulum Merdeka" },
-            indikator: { type: "string", description: "Indikator pencapaian kompetensi" },
-            materi: { type: "string", description: "Materi pokok yang diujikan" },
-            tingkatKognitif: { type: "string", description: "C1-C6 (Mengingat, Memahami, Menerapkan, Menganalisis, Mengevaluasi, Mencipta)" },
-            bentukSoal: { type: "string", description: "Format soal (PG, Uraian, dll)" },
-            nomorSoal: { type: "string", description: "Nomor soal yang terkait dengan kisi-kisi ini (contoh: '1, 2, 3' atau '1-3')" },
+            nomor: { type: "number" },
+            kompetensiDasar: { type: "string" },
+            indikator: { type: "string" },
+            materi: { type: "string" },
+            tingkatKognitif: { type: "string" },
+            bentukSoal: { type: "string" },
+            nomorSoal: { type: "string" },
           },
           required: ["nomor", "kompetensiDasar", "indikator", "materi", "tingkatKognitif", "bentukSoal", "nomorSoal"],
         },
@@ -245,24 +244,119 @@ const SOAL_SCHEMA = {
           type: "object",
           properties: {
             nomor: { type: "number" },
-            format: { type: "string", enum: ["pg", "pgkompleks", "menjodohkan", "benarSalah", "isianSingkat", "uraian"] },
+            tipe: { type: "string" },
+            format: { type: "string" },
             pertanyaan: { type: "string" },
             opsi: { type: "array", items: { type: "string" } },
-            pasangan: { type: "array", items: { type: "object", properties: { kiri: { type: "string" }, kanan: { type: "string" } } }, description: "Untuk format menjodohkan" },
+            pasangan: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  kiri: { type: "string" },
+                  kanan: { type: "string" },
+                },
+              },
+            },
             kunciJawaban: { type: "string" },
             pembahasan: { type: "string" },
-            tingkat: { type: "string", enum: ["hots", "lots"] },
-            c_level: { type: "string", description: "C1-C6 level taksonomi" },
+            tingkat: { type: "string" },
+            c_level: { type: "string" },
             ilustrasi: { type: "string", description: "Isi HANYA jika soal ini benar-benar membutuhkan gambar/diagram untuk dipahami. Jika diisi, WAJIB berupa kode SVG inline yang valid (dimulai dengan <svg) yang merepresentasikan gambar/diagram dimaksud. Kosongkan jika tidak perlu." },
           },
-          required: ["nomor", "format", "pertanyaan", "kunciJawaban", "pembahasan", "tingkat"],
+          required: ["nomor", "tipe", "pertanyaan", "kunciJawaban", "pembahasan", "tingkat"],
         },
       },
     },
-    required: ["judul", "kelas", "kisiKisi", "soal"],
+    required: ["judul", "mataPelajaran", "kelas", "kisiKisi", "soal"],
     additionalProperties: false,
   },
 };
+
+function getSoalFormatLabel(format: string | undefined) {
+  switch (format) {
+    case "pg": return "Pilihan Ganda";
+    case "pgkompleks": return "Pilihan Ganda Kompleks";
+    case "menjodohkan": return "Menjodohkan";
+    case "benarSalah": return "Benar/Salah";
+    case "isianSingkat": return "Isian Singkat";
+    case "uraian":
+    case "esai": return "Uraian";
+    default: return "Soal";
+  }
+}
+
+function inferCLevel(source: Record<string, any>, soal: Record<string, any>) {
+  if (typeof soal.c_level === "string" && soal.c_level.trim()) return soal.c_level.trim();
+  if (typeof source.tipeSoal === "string") {
+    const match = source.tipeSoal.match(/C[1-6]/i);
+    if (match) return match[0].toUpperCase();
+  }
+  return "C2";
+}
+
+function deriveKisiKisiFromSoal(source: Record<string, any>) {
+  const soalList = Array.isArray(source.soal) ? source.soal : [];
+  const tujuan = typeof source.tujuanPembelajaran === "string" && source.tujuanPembelajaran.trim()
+    ? source.tujuanPembelajaran.trim()
+    : `Peserta didik memahami materi ${source.topik ?? source.mataPelajaran ?? "pembelajaran"}`;
+  const materi = source.topik ?? source.materi ?? source.mataPelajaran ?? "-";
+
+  return soalList.map((soal: any, index: number) => {
+    const format = soal.format ?? soal.tipe;
+    const nomor = Number(soal.nomor ?? index + 1);
+    return {
+      nomor: index + 1,
+      kompetensiDasar: tujuan,
+      indikator: `Peserta didik dapat menjawab soal nomor ${nomor} dengan benar sesuai materi yang diujikan.`,
+      materi,
+      tingkatKognitif: inferCLevel(source, soal),
+      bentukSoal: getSoalFormatLabel(format),
+      nomorSoal: String(nomor),
+    };
+  });
+}
+
+function canonicalizeFormat(raw: string | undefined): string {
+  if (!raw) return "uraian";
+  const v = raw.toLowerCase().trim();
+  if (["pg", "pilihan ganda", "multiple choice", "pilihanganda", "pilihan_ganda"].includes(v)) return "pg";
+  if (["pgkompleks", "pilihan ganda kompleks", "pg kompleks", "pg_kompleks"].includes(v)) return "pgkompleks";
+  if (["menjodohkan", "matching", "jodoh"].includes(v)) return "menjodohkan";
+  if (["benarsalah", "benar salah", "benar/salah", "true false", "truefalse"].includes(v)) return "benarSalah";
+  if (["isiansingkat", "isian singkat", "isian", "fill in"].includes(v)) return "isianSingkat";
+  if (["uraian", "esai", "essay", "uraian bebas"].includes(v)) return "uraian";
+  return v;
+}
+
+function normalizeSoalContent(content: Json): Json {
+  if (!content || typeof content !== "object" || Array.isArray(content)) return content;
+
+  const normalized = { ...(content as Record<string, any>) };
+  if (Array.isArray(normalized.kisi_kisi) && !Array.isArray(normalized.kisiKisi)) {
+    normalized.kisiKisi = normalized.kisi_kisi;
+  }
+
+  if (Array.isArray(normalized.soal)) {
+    normalized.soal = normalized.soal.map((soal: any, index: number) => {
+      const rawFormat = soal.format ?? soal.tipe;
+      const canonical = canonicalizeFormat(rawFormat);
+      return {
+        ...soal,
+        nomor: soal.nomor ?? index + 1,
+        format: canonical,
+        tipe: canonical,
+        c_level: inferCLevel(normalized, soal),
+      };
+    });
+  }
+
+  if (!Array.isArray(normalized.kisiKisi) || normalized.kisiKisi.length === 0) {
+    normalized.kisiKisi = deriveKisiKisiFromSoal(normalized);
+  }
+
+  return normalized as Json;
+}
 
 const RKP_SCHEMA = {
   name: "tulis_rkp",
@@ -304,21 +398,7 @@ function buildPrompt(type: "rpp" | "soal" | "rkp", payload: unknown): { system: 
     const p = RppInput.parse(payload);
     return {
       system:
-        `Anda adalah perancang kurikulum berpengalaman di Indonesia. Buat Perencanaan Pelaksanaan Pembelajaran (RPP) yang sangat detail dan berkualitas sesuai Kurikulum Merdeka, dalam Bahasa Indonesia formal pendidikan.
-
-Format RPP harus mengikuti struktur:
-1. IDENTITAS - data lengkap penyusun, satuan pendidikan, mapel, kelas, semester, durasi, tahun pelajaran
-2. IDENTIFIKASI - kesiapan peserta didik: karakteristik, minat bakat, latar belakang, kebutuhan belajar, materi pelajaran
-3. DIMENSI PROFIL LULUSAN - pilih yang relevan dari 8 dimensi
-4. DESAIN PEMBELAJARAN - capaian pembelajaran, lintas disiplin ilmu, tujuan pembelajaran terukur, praktik pedagogis (model & metode), kemitraan
-5. LINGKUNGAN PEMBELAJARAN - ruang fisik, virtual, budaya belajar
-6. PEMANFAATAN DIGITAL - alat digital yang digunakan
-7. SARANA PRASARANA - daftar alat dan bahan
-8. SUMBER BELAJAR - referensi pembelajaran
-9. PENGALAMAN PEMBELAJARAN - kegiatan Awal (dengan durasi), Inti (dengan durasi dan tahapan: Memahami, Mengaplikasi, Merefleksi), Penutup. Setiap kegiatan harus konkret, detail langkah demi langkah, dan kontekstual.
-10. ASESMEN - asesmen awal (diagnostik), proses (formatif), akhir (sumatif)
-
-Buat langkah pembelajaran yang sangat detail dan konkret seperti contoh RPP profesional guru Indonesia.`,
+        `Anda adalah perancang kurikulum berpengalaman di Indonesia. Buat Perencanaan Pelaksanaan Pembelajaran (RPP) yang sangat detail dan berkualitas sesuai Kurikulum Merdeka, dalam Bahasa Indonesia formal pendidikan.`,
       user: `Buat RPP detail untuk:
 - Mata Pelajaran: ${p.mataPelajaran}
 - Kelas: ${p.kelas}${p.fase ? ` (Fase ${p.fase})` : ""}${p.semester ? `\n- Semester: ${p.semester}` : ""}${p.satuanPendidikan ? `\n- Satuan Pendidikan: ${p.satuanPendidikan}` : ""}${p.tahunPelajaran ? `\n- Tahun Pelajaran: ${p.tahunPelajaran}` : ""}${p.namaPenyusun ? `\n- Nama Penyusun: ${p.namaPenyusun}` : ""}
@@ -335,46 +415,24 @@ Sertakan minimal 3 tujuan pembelajaran terukur, langkah pembelajaran yang sangat
     const p = SoalInput.parse(payload);
     return {
       system:
-        `Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Buat soal berkualitas tinggi, jelas, dan komprehensif sesuai spesifikasi, termasuk KISI-KISI SOAL sesuai format Kurikulum Merdeka.
-
-INSTRUKSI UMUM:
-- Soal harus jelas, tidak ambigu, dan sesuai tingkat kognitif yang diminta
-- Jawaban benar unik dan terbukti
-- Pembahasan singkat tetapi padat dan edukatif
-- Ikuti format yang diminta (pilihan ganda, menjodohkan, esai, dll)
-- Ilustrasi HANYA diberikan jika soal benar-benar memerlukan gambar/diagram untuk dipahami (contoh: geometri, grafik, peta, siklus). Jika diberikan, isi field ilustrasi dengan kode SVG inline yang valid (dimulai dengan <svg xmlns="http://www.w3.org/2000/svg"). Jangan tambahkan ilustrasi pada soal yang bisa dipahami dari teks saja
-- Sesuaikan tingkat kesulitan (HOTS atau LOTS)
-- Ikuti taksonomi Bloom yang diminta (C1-C6)
-
-KISI-KISI SOAL:
-- Buat kisi-kisi untuk setiap kelompok soal yang mencakup kompetensi dasar, indikator, materi, tingkat kognitif (C1-C6), bentuk soal, dan nomor soal terkait
-- Kisi-kisi harus mencerminkan pemetaan yang jelas antara kompetensi dengan soal yang dibuat
-- Format kisi-kisi sesuai standar Kurikulum Merdeka`,
-      user: `Buat ${p.jumlahSoal} soal dengan spesifikasi berikut:
-${p.jenisUjian ? `- Jenis Ujian: ${p.jenisUjian}` : ""}
-${p.fase ? `- Fase: ${p.fase}` : ""}
+        "Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Buat soal yang jelas, valid, lengkap dengan kisi-kisi, kunci jawaban, dan pembahasan sesuai format Kurikulum Merdeka.",
+      user: `Buat ${p.jumlahSoal} soal format ${p.formatSoal === "campuran" ? "campuran (pilihan ganda, esai, dan lainnya)" : p.formatSoal} tingkat ${p.tingkat} untuk:
+- Mata Pelajaran: ${p.mataPelajaran}
 - Kelas: ${p.kelas}
-- Mata Pelajaran: ${p.mataPelajaran}${p.semester ? `\n- Semester: ${p.semester}` : ""}
-- Alokasi Waktu: ${p.waktu}
+${p.fase ? `- Fase: ${p.fase}` : ""}
 ${p.topik ? `- Topik: ${p.topik}` : ""}
 ${p.tujuanPembelajaran ? `- Tujuan Pembelajaran: ${p.tujuanPembelajaran}` : ""}
-${p.sumberReferensi ? `- Sumber Referensi: ${p.sumberReferensi}` : ""}
-${p.tipeSoal ? `- Tipe Soal (Taksonomi): ${p.tipeSoal}` : ""}
-- Format Soal: ${p.formatSoal === "campuran" ? "Campuran (pilihan ganda, esai, dll)" : p.formatSoal}
+${p.tipeSoal ? `- Taksonomi: ${p.tipeSoal}` : ""}
+${p.waktu ? `- Waktu: ${p.waktu}` : ""}
+${p.sumberReferensi ? `- Referensi: ${p.sumberReferensi}` : ""}
 ${p.formatSoal === "pg" ? `- Jumlah opsi jawaban PG: ${p.jumlahPilihanPg} (gunakan ${p.jumlahPilihanPg === 3 ? "A-C" : p.jumlahPilihanPg === 4 ? "A-D" : "A-E"})` : ""}
-- Tingkat Kesulitan: ${p.tingkat === "campuran" ? "Campuran HOTS dan LOTS" : p.tingkat.toUpperCase()}
-${p.tambahkanIlustrasi ? "- Ilustrasi BOLEH ditambahkan HANYA pada soal yang memerlukan gambar/diagram (misalnya bangun ruang, grafik, peta). Jika soal memerlukan ilustrasi, isi field \"ilustrasi\" dengan kode SVG inline yang valid dan sederhana (dimulai dengan <svg xmlns=\"http://www.w3.org/2000/svg\"). Untuk soal teks biasa, kosongkan field ilustrasi." : "- Jangan isi field ilustrasi pada soal manapun karena pengguna tidak meminta ilustrasi."}
-
-WAJIB SERTAKAN:
-1. KISI-KISI yang memetakan kompetensi dasar, indikator, materi, tingkat kognitif, bentuk soal, dan nomor soal
-2. SOAL lengkap dengan:
-   - Pertanyaan yang jelas sesuai format yang diminta
-   - Opsi jawaban (jika format pilihan ganda/ganda kompleks)
-   - Kunci jawaban yang tepat
-   - Pembahasan yang menjelaskan mengapa jawaban tersebut benar
-   - Tingkat kognitif (HOTS/LOTS)
-   - Level taksonomi (C1-C6)
-3. Jika format "pg", gunakan tepat ${p.jumlahPilihanPg} opsi jawaban untuk setiap soal`,
+${p.tambahkanIlustrasi ? "- Ilustrasi BOLEH ditambahkan HANYA pada soal yang memerlukan gambar/diagram (misalnya bangun ruang, grafik, peta). Jika soal memerlukan ilustrasi, isi field \"ilustrasi\" dengan kode SVG inline yang valid dan sederhana (dimulai dengan <svg xmlns=\"http://www.w3.org/2000/svg\"). Untuk soal teks biasa, kosongkan field ilustrasi." : "- Jangan isi field ilustrasi pada soal manapun."}
+WAJIB sertakan field "kisiKisi" sebagai array dan isi untuk semua soal.
+Setiap item kisi-kisi harus memiliki: nomor, kompetensiDasar, indikator, materi, tingkatKognitif, bentukSoal, dan nomorSoal.
+Pastikan jawaban akurat, pembahasan jelas, dan sesuai dengan tingkat kesulitan yang diminta.
+Jika format soal adalah "pg", setiap soal WAJIB memiliki tepat ${p.jumlahPilihanPg} opsi jawaban dalam field "opsi" berupa array string dan tidak boleh kosong.
+Setiap item pada field "opsi" hanya boleh berisi isi jawaban, tanpa awalan label seperti A., B., C., atau D. karena label akan dibuat otomatis oleh aplikasi.
+Jika format soal bukan pilihan ganda, jangan isi field "opsi" dengan data kosong yang tidak perlu.`,
       tool: SOAL_SCHEMA,
     };
   }
@@ -416,12 +474,13 @@ export const generateDocument = createServerFn({ method: "POST" })
     if (!sess) {
       return { ok: false as const, error: "Sesi tidak valid. Silakan login ulang." };
     }
+
     const { url, apiKey, model, isEnabled } = await getAiRuntimeConfig();
     if (!isEnabled) {
       return { ok: false as const, error: "Layanan AI sedang dinonaktifkan oleh admin." };
     }
     if (!apiKey) {
-      return { ok: false as const, error: "AI Gateway belum dikonfigurasi." };
+      return { ok: false as const, error: "AI Gateway belum dikonfigurasi (API key kosong)." };
     }
 
     const { system, user, tool } = buildPrompt(data.type, data.payload);
@@ -452,7 +511,7 @@ export const generateDocument = createServerFn({ method: "POST" })
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error("AI gateway error", res.status, text);
-      return { ok: false as const, error: "Gagal menghubungi AI. Coba lagi." };
+      return { ok: false as const, error: `Gagal menghubungi AI (${res.status}): ${text}` };
     }
 
     const json = await res.json();
@@ -463,19 +522,15 @@ export const generateDocument = createServerFn({ method: "POST" })
     let parsed: Json;
     try {
       parsed = JSON.parse(toolCall.function.arguments) as Json;
-    } catch (e) {
-      console.error("Failed to parse AI response:", toolCall.function.arguments);
+    } catch {
       return { ok: false as const, error: "Gagal mengurai hasil AI." };
     }
 
-    // Validate response structure for soal
-    if (data.type === "soal" && typeof parsed === "object" && parsed !== null) {
-      if (!("soal" in parsed) || !Array.isArray((parsed as any).soal)) {
-        console.warn("Soal response missing soal array:", parsed);
-        if (Array.isArray(parsed)) {
-          parsed = { soal: parsed } as Json;
-        }
+    if (data.type === "soal") {
+      if (Array.isArray(parsed)) {
+        parsed = { soal: parsed } as Json;
       }
+      parsed = normalizeSoalContent(parsed);
     }
 
     const title = deriveTitle(data.type, data.payload);
@@ -538,6 +593,14 @@ const SuggestInput = z.object({
   fase: z.string().max(20).optional().default(""),
 });
 
+const SuggestSoalInput = z.object({
+  token: z.string().min(16).max(256),
+  mataPelajaran: z.string().min(1).max(80),
+  kelas: z.string().min(1).max(40),
+  fase: z.string().max(20).optional().default(""),
+  tipeSoal: z.string().max(200).optional().default(""),
+});
+
 const SUGGEST_SCHEMA = {
   name: "suggest_rpp_content",
   description: "Memberikan rekomendasi materi pokok dan tujuan pembelajaran.",
@@ -556,6 +619,28 @@ const SUGGEST_SCHEMA = {
       },
     },
     required: ["materi", "tujuan"],
+    additionalProperties: false,
+  },
+};
+
+const SUGGEST_SOAL_SCHEMA = {
+  name: "suggest_soal_content",
+  description: "Memberikan rekomendasi topik pembelajaran dan tujuan pembelajaran untuk soal.",
+  parameters: {
+    type: "object",
+    properties: {
+      topik: {
+        type: "array",
+        items: { type: "string" },
+        description: "3-5 rekomendasi topik pembelajaran yang relevan",
+      },
+      tujuan: {
+        type: "array",
+        items: { type: "string" },
+        description: "3-5 rekomendasi tujuan pembelajaran yang terukur sesuai taksonomi Bloom",
+      },
+    },
+    required: ["topik", "tujuan"],
     additionalProperties: false,
   },
 };
@@ -598,7 +683,10 @@ export const suggestRppContent = createServerFn({ method: "POST" })
 
     if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan." };
     if (res.status === 402) return { ok: false as const, error: "Kredit AI habis." };
-    if (!res.ok) return { ok: false as const, error: "Gagal menghubungi AI." };
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { ok: false as const, error: `Gagal menghubungi AI (${res.status}): ${text}` };
+    }
 
     const json = await res.json();
     const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
@@ -609,6 +697,63 @@ export const suggestRppContent = createServerFn({ method: "POST" })
     try {
       const parsed = JSON.parse(toolCall.function.arguments) as { materi: string[]; tujuan: string[] };
       return { ok: true as const, materi: parsed.materi, tujuan: parsed.tujuan };
+    } catch {
+      return { ok: false as const, error: "Gagal mengurai hasil AI." };
+    }
+  });
+
+export const suggestSoalContent = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => SuggestSoalInput.parse(d))
+  .handler(async ({ data }) => {
+    const sess = await getCodeIdFromToken(data.token);
+    if (!sess) return { ok: false as const, error: "Sesi tidak valid." };
+
+    const { url, apiKey, model, isEnabled } = await getAiRuntimeConfig();
+    if (!isEnabled) {
+      return { ok: false as const, error: "Layanan AI sedang dinonaktifkan oleh admin." };
+    }
+    if (!apiKey) return { ok: false as const, error: "AI Gateway belum dikonfigurasi." };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Anda adalah penulis soal ujian bermutu untuk guru Indonesia. Berikan rekomendasi topik pembelajaran dan tujuan pembelajaran yang relevan, konkret, dan terukur sesuai taksonomi Bloom.",
+          },
+          {
+            role: "user",
+            content: `Berikan rekomendasi untuk:\n- Mata Pelajaran: ${data.mataPelajaran}\n- Kelas: ${data.kelas}${data.fase ? ` (Fase ${data.fase})` : ""}${data.tipeSoal ? `\n- Taksonomi: ${data.tipeSoal}` : ""}\n\nBerikan 3-5 topik pembelajaran yang sesuai dan 3-5 tujuan pembelajaran yang terukur.`,
+          },
+        ],
+        tools: [{ type: "function", function: SUGGEST_SOAL_SCHEMA }],
+        tool_choice: { type: "function", function: { name: "suggest_soal_content" } },
+      }),
+    });
+
+    if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan." };
+    if (res.status === 402) return { ok: false as const, error: "Kredit AI habis." };
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { ok: false as const, error: `Gagal menghubungi AI (${res.status}): ${text}` };
+    }
+
+    const json = await res.json();
+    const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      return { ok: false as const, error: "AI tidak mengembalikan hasil." };
+    }
+
+    try {
+      const parsed = JSON.parse(toolCall.function.arguments) as { topik: string[]; tujuan: string[] };
+      return { ok: true as const, topik: parsed.topik, tujuan: parsed.tujuan };
     } catch {
       return { ok: false as const, error: "Gagal mengurai hasil AI." };
     }

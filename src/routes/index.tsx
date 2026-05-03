@@ -14,7 +14,7 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Guru AI — Generator RPP, RKP & Soal dengan Kode Akses" },
+      { title: "Asisten Guru — Generator RPP, RKP & Soal dengan Kode Akses" },
       {
         name: "description",
         content:
@@ -35,7 +35,7 @@ function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </div>
-            <span className="font-semibold tracking-tight">Guru AI</span>
+            <span className="font-semibold tracking-tight">Asisten Guru</span>
           </Link>
           <Link to="/login">
             <Button size="sm">Masuk</Button>
@@ -156,7 +156,7 @@ function LandingPage() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Guru AI. Untuk pendidik Indonesia.</p>
+          <p>© {new Date().getFullYear()} Asisten Guru. Untuk pendidik Indonesia.</p>
         </div>
       </footer>
     </div>

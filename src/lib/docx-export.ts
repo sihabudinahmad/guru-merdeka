@@ -5,6 +5,12 @@ import {
   TextRun,
   HeadingLevel,
   AlignmentType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  PageBreak,
 } from "docx";
 
 function H(text: string, level: typeof HeadingLevel.HEADING_1 | typeof HeadingLevel.HEADING_2 | typeof HeadingLevel.HEADING_3 = HeadingLevel.HEADING_2) {
@@ -29,6 +35,31 @@ function Bullet(text: string) {
     bullet: { level: 0 },
     spacing: { after: 60 },
   });
+}
+
+function cleanOptionLabel(option: string) {
+  return option.replace(/^\s*[A-Ea-e][\.)\-:]\s*/, "").trim();
+}
+
+function getKisiKisiRows(c: any) {
+  if (Array.isArray(c.kisiKisi) && c.kisiKisi.length > 0) return c.kisiKisi;
+  if (Array.isArray(c.kisi_kisi) && c.kisi_kisi.length > 0) return c.kisi_kisi;
+  if (!Array.isArray(c.soal) || c.soal.length === 0) return [];
+
+  const tujuan = typeof c.tujuanPembelajaran === "string" && c.tujuanPembelajaran.trim()
+    ? c.tujuanPembelajaran.trim()
+    : `Peserta didik memahami materi ${c.topik ?? c.mataPelajaran ?? "pembelajaran"}`;
+  const materi = c.topik ?? c.materi ?? c.mataPelajaran ?? "-";
+
+  return c.soal.map((s: any, index: number) => ({
+    nomor: index + 1,
+    kompetensiDasar: tujuan,
+    indikator: `Peserta didik dapat menjawab soal nomor ${s.nomor ?? index + 1} dengan benar sesuai materi yang diujikan.`,
+    materi,
+    tingkatKognitif: s.c_level ?? "C2",
+    bentukSoal: s.format ?? s.tipe ?? "Soal",
+    nomorSoal: String(s.nomor ?? index + 1),
+  }));
 }
 
 function rppDoc(c: any): Paragraph[] {
@@ -173,35 +204,167 @@ function rppDoc(c: any): Paragraph[] {
 
 function soalDoc(c: any): Paragraph[] {
   const p: Paragraph[] = [];
+  const kisiKisiRows = getKisiKisiRows(c);
   p.push(new Paragraph({
     alignment: AlignmentType.CENTER,
     heading: HeadingLevel.HEADING_1,
     children: [new TextRun({ text: c.judul ?? "Lembar Soal", bold: true })],
   }));
+  
+  // Informasi umum
+  if (c.jenisUjian) p.push(P(`Jenis Ujian: ${c.jenisUjian}`));
+  if (c.fase) p.push(P(`Fase: ${c.fase}`));
   p.push(P(`Mata Pelajaran: ${c.mataPelajaran ?? "-"}`));
   p.push(P(`Kelas: ${c.kelas ?? "-"}`));
-  p.push(P(`Materi: ${c.materi ?? "-"}`));
+  if (c.semester) p.push(P(`Semester: ${c.semester}`));
+  if (c.waktu) p.push(P(`Waktu: ${c.waktu}`));
+  if (c.topik) p.push(P(`Topik: ${c.topik}`));
+  if (c.tujuanPembelajaran) p.push(P(`Tujuan Pembelajaran: ${c.tujuanPembelajaran}`));
+  
   p.push(H("Soal"));
   (c.soal ?? []).forEach((s: any) => {
     p.push(new Paragraph({
       children: [new TextRun({ text: `${s.nomor}. ${s.pertanyaan}`, bold: true })],
       spacing: { before: 160, after: 60 },
     }));
-    if (s.tipe === "pg" && Array.isArray(s.opsi)) {
+    
+    // Handle different formats
+    if ((s.format === "pg" || s.tipe === "pg") && Array.isArray(s.opsi)) {
       s.opsi.forEach((opt: string, i: number) => {
         const letter = String.fromCharCode(65 + i);
-        p.push(P(`${letter}. ${opt}`));
+        p.push(P(`${letter}. ${cleanOptionLabel(opt)}`));
       });
+    } else if (s.format === "pgkompleks" && Array.isArray(s.opsi)) {
+      s.opsi.forEach((opt: string, i: number) => {
+        const letter = String.fromCharCode(65 + i);
+        p.push(P(`${letter}. ${cleanOptionLabel(opt)}`));
+      });
+    } else if (s.format === "menjodohkan" && Array.isArray(s.pasangan)) {
+      s.pasangan.forEach((pair: any, i: number) => {
+        p.push(P(`${i + 1}. ${pair.kiri} → ${pair.kanan}`));
+      });
+    } else if (s.format === "benarSalah") {
+      p.push(P("Benar / Salah"));
+    }
+    
+    if (s.ilustrasi) {
+      {
+        const iluText = s.ilustrasi.trimStart().startsWith("<svg")
+          ? "[Lihat ilustrasi pada pratinjau web]"
+          : `[Ilustrasi: ${s.ilustrasi}]`;
+        p.push(P(iluText));
+      }
     }
   });
-  p.push(H("Kunci Jawaban & Pembahasan"));
+  
+  // Page break before Kisi-kisi
+  p.push(new Paragraph({
+    children: [new PageBreak()],
+  }));
+  
+  // Kisi-kisi Section
+  p.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    heading: HeadingLevel.HEADING_1,
+    children: [new TextRun({ text: "KISI-KISI SOAL", bold: true })],
+    spacing: { before: 200, after: 200 },
+  }));
+  
+  if (kisiKisiRows.length > 0) {
+    // Create table for kisi-kisi
+    const kisiRows: TableRow[] = [];
+    
+    // Header row
+    kisiRows.push(new TableRow({
+      children: [
+        new TableCell({
+          children: [new Paragraph({ text: "No", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "Kompetensi Dasar", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "Indikator", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "Materi", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "Tingkat Kognitif", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "Bentuk Soal", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+        new TableCell({
+          children: [new Paragraph({ text: "No. Soal", alignment: AlignmentType.CENTER })],
+          shading: { fill: "E0E0E0" },
+        }),
+      ],
+    }));
+    
+    // Data rows
+    kisiKisiRows.forEach((kisi: any) => {
+      kisiRows.push(new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph(String(kisi.nomor ?? "-"))] }),
+          new TableCell({ children: [new Paragraph(kisi.kompetensiDasar ?? "-")] }),
+          new TableCell({ children: [new Paragraph(kisi.indikator ?? "-")] }),
+          new TableCell({ children: [new Paragraph(kisi.materi ?? "-")] }),
+          new TableCell({ children: [new Paragraph(kisi.tingkatKognitif ?? "-")] }),
+          new TableCell({ children: [new Paragraph(kisi.bentukSoal ?? "-")] }),
+          new TableCell({ children: [new Paragraph(kisi.nomorSoal ?? "-")] }),
+        ],
+      }));
+    });
+    
+    // Note: docx library requires tables to be in a separate section
+    // We'll add table info as paragraphs for now
+    p.push(H("Tabel Kisi-kisi"));
+    kisiKisiRows.forEach((kisi: any, idx: number) => {
+      p.push(new Paragraph({
+        children: [new TextRun({ text: `${idx + 1}. `, bold: true })],
+        spacing: { before: 100 },
+      }));
+      p.push(KV("Kompetensi Dasar", kisi.kompetensiDasar ?? "-"));
+      p.push(KV("Indikator", kisi.indikator ?? "-"));
+      p.push(KV("Materi", kisi.materi ?? "-"));
+      p.push(KV("Tingkat Kognitif", kisi.tingkatKognitif ?? "-"));
+      p.push(KV("Bentuk Soal", kisi.bentukSoal ?? "-"));
+      p.push(KV("No. Soal", kisi.nomorSoal ?? "-"));
+    });
+  } else {
+    p.push(P("Kisi-kisi tidak tersedia."));
+  }
+  
+  // Page break before Kunci Jawaban
+  p.push(new Paragraph({
+    children: [new PageBreak()],
+  }));
+  
+  // Kunci Jawaban & Pembahasan Section
+  p.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    heading: HeadingLevel.HEADING_1,
+    children: [new TextRun({ text: "KUNCI JAWABAN & PEMBAHASAN", bold: true })],
+    spacing: { before: 200, after: 200 },
+  }));
+  
   (c.soal ?? []).forEach((s: any) => {
     p.push(new Paragraph({
-      children: [new TextRun({ text: `${s.nomor}. ${s.kunciJawaban}`, bold: true })],
+      children: [new TextRun({ text: `${s.nomor}. Kunci Jawaban: ${s.kunciJawaban}`, bold: true })],
       spacing: { before: 100, after: 40 },
     }));
     p.push(P(`Pembahasan: ${s.pembahasan ?? "-"}`));
+    if (s.c_level) p.push(P(`Taksonomi: ${s.c_level}`));
+    if (s.tingkat) p.push(P(`Tingkat: ${s.tingkat.toUpperCase()}`));
   });
+  
   return p;
 }
 

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, KeyRound, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { redeemAccessCode } from "@/server/access.functions";
+import { redeemAccessCode } from "@/functions/access.functions";
 import { getDeviceFingerprint, getSession, setSession } from "@/lib/session";
 
 export const Route = createFileRoute("/login")({
@@ -75,7 +75,7 @@ function LoginPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </div>
-            <span className="font-semibold tracking-tight">Guru AI</span>
+            <span className="font-semibold tracking-tight">Asisten Guru</span>
           </div>
         </div>
       </header>
@@ -90,7 +90,7 @@ function LoginPage() {
           </div>
           <h1 className="mt-4 text-center text-2xl font-bold tracking-tight">Masuk dengan Kode</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">
-            Gunakan kode akses yang diberikan oleh sekolah Anda.
+            Gunakan kode akses yang diberikan saat transaksi pembelian. Kode biasanya terdiri dari 6-8 karakter.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -98,12 +98,12 @@ function LoginPage() {
               <Label htmlFor="code">Kode Akses</Label>
               <Input
                 id="code"
-                placeholder="DEMO-GURU-2026"
+                placeholder="masukkan kode di sini"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 autoComplete="off"
                 autoCapitalize="characters"
-                className="h-12 text-center text-lg tracking-widest"
+                className="h-12 text-center text-lg"
                 disabled={loading}
               />
             </div>
@@ -120,7 +120,7 @@ function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Coba kode demo: <span className="font-mono font-semibold">DEMO-GURU-2026</span>
+            Jangan lupa berdoa
           </p>
         </div>
       </main>
