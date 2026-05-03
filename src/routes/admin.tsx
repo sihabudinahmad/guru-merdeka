@@ -267,7 +267,16 @@ function AdminLayout() {
     );
   }
 
-  const navigationItems = [
+  type NavItem = {
+    to: string;
+    label: string;
+    description: string;
+    icon: typeof LayoutDashboard;
+    active: boolean;
+    anchor?: boolean;
+  };
+
+  const navigationItems: NavItem[] = [
     {
       to: "/admin",
       label: "Dashboard Admin",
@@ -291,7 +300,7 @@ function AdminLayout() {
       active: pathname === "/admin" || pathname === "/admin/",
       anchor: true,
     },
-  ] as const;
+  ];
 
   return (
     <SidebarProvider defaultOpen>
