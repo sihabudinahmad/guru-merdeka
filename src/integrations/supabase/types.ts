@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_settings: {
+        Row: {
+          active_model: string
+          active_tier: string
+          api_base_url: string
+          api_key: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          model_catalog: Json
+          provider_label: string
+          updated_at: string
+        }
+        Insert: {
+          active_model?: string
+          active_tier?: string
+          api_base_url?: string
+          api_key?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          model_catalog?: Json
+          provider_label?: string
+          updated_at?: string
+        }
+        Update: {
+          active_model?: string
+          active_tier?: string
+          api_base_url?: string
+          api_key?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          model_catalog?: Json
+          provider_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       code_devices: {
         Row: {
           code_id: string
