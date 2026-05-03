@@ -117,12 +117,14 @@ function AdminLayout() {
         if (!isAdminVerified) {
           try {
             const { data: ownRole, error: ownRoleError } = await withTimeout(
-              supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", sess.user.id)
-                .eq("role", "admin")
-                .maybeSingle(),
+              Promise.resolve(
+                supabase
+                  .from("user_roles")
+                  .select("role")
+                  .eq("user_id", sess.user.id)
+                  .eq("role", "admin")
+                  .maybeSingle(),
+              ),
               8000,
               "Timeout saat membaca role admin.",
             );
