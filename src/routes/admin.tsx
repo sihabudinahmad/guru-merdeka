@@ -117,12 +117,14 @@ function AdminLayout() {
         if (!isAdminVerified) {
           try {
             const { data: ownRole, error: ownRoleError } = await withTimeout(
-              supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", sess.user.id)
-                .eq("role", "admin")
-                .maybeSingle(),
+              Promise.resolve(
+                supabase
+                  .from("user_roles")
+                  .select("role")
+                  .eq("user_id", sess.user.id)
+                  .eq("role", "admin")
+                  .maybeSingle(),
+              ),
               8000,
               "Timeout saat membaca role admin.",
             );
@@ -265,7 +267,16 @@ function AdminLayout() {
     );
   }
 
-  const navigationItems = [
+  type NavItem = {
+    to: string;
+    label: string;
+    description: string;
+    icon: typeof LayoutDashboard;
+    active: boolean;
+    anchor?: boolean;
+  };
+
+  const navigationItems: NavItem[] = [
     {
       to: "/admin",
       label: "Dashboard Admin",
@@ -289,7 +300,7 @@ function AdminLayout() {
       active: pathname === "/admin" || pathname === "/admin/",
       anchor: true,
     },
-  ] as const;
+  ];
 
   return (
     <SidebarProvider defaultOpen>

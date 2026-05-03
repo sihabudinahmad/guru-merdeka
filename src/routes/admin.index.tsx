@@ -145,7 +145,7 @@ function AdminPanel() {
 
       if (ai.status === "fulfilled") {
         if (ai.value.ok) setAiSettings(ai.value.settings as AiSettings);
-        else toast.error(ai.value.error || "Gagal memuat konfigurasi AI");
+        else toast.error(("error" in ai.value && (ai.value as { error?: string }).error) || "Gagal memuat konfigurasi AI");
       } else {
         console.error("AI settings error:", ai.reason);
       }

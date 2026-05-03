@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          label: string | null
+          max_devices: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          max_devices?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          max_devices?: number
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
           active_model: string
@@ -50,36 +80,6 @@ export type Database = {
           model_catalog?: Json
           provider_label?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      access_codes: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string | null
-          id: string
-          is_active: boolean
-          label: string | null
-          max_devices: number
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          label?: string | null
-          max_devices?: number
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          label?: string | null
-          max_devices?: number
         }
         Relationships: []
       }
