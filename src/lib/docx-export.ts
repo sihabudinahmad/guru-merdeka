@@ -575,7 +575,7 @@ export async function buildDocxBlob(type: "rpp" | "soal" | "rkp", content: any):
                 alignment: AlignmentType.CENTER,
                 children: [
                   new TextRun({ text: "Halaman ", size: 20, font: "Times New Roman" }),
-                  PageNumber.CURRENT,
+                  new TextRun({ children: [PageNumber.CURRENT], size: 20, font: "Times New Roman" }),
                 ],
               }),
             ],
